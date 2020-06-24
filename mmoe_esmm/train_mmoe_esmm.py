@@ -13,7 +13,7 @@ import tensorflow as tf
 
 from sklearn.metrics import roc_auc_score
 
-from src.esmm import ESMM
+from src.mmoe_esmm import MMOE_ESMM
 from src.data_iterator import DataIterator
 from src.flags import FLAGS
 
@@ -74,7 +74,7 @@ def get_hdfs_parts(hdfs_root, start_day, end_day):
 
 def train(train_part_list, eval_part_list, train_params, eval_params):
   data_iterator = DataIterator(train_params)
-  esmm = ESMM(train_params)
+  esmm = MMOE_ESMM(train_params)
   config = tf.ConfigProto()
   config.gpu_options.allow_growth = True
   config.gpu_options.per_process_gpu_memory_fraction = 0.5
