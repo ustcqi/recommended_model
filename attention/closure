@@ -1,0 +1,1177 @@
+#include <algorithm>
+#include <map>
+#include <utility>
+#include "huichuan/trigger_server_v2/process/ir_closure.h"
+#include "base/strings/string_number_conversions.h"
+#include "huichuan/trigger_server_v2/frame/global_env.h"
+#include "huichuan/trigger_server_v2/component/index_accessor.h"
+#include "huichuan/trigger_server_v2/process/request_closure.h"
+#include "huichuan/trigger_server_v2/strategy/exp_flags.h"
+#include "huichuan/trigger_server_v2/strategy/multi_version_table.h"
+#include "huichuan/trigger_server_v2/strategy/debug_info.h"
+
+namespace huichuan {
+namespace trigger_server_v2 {
+DECLARE_int32(adresource_uc_headline);
+DEFINE_bool(enable_oldb_req_refact, false, "");
+IRClosure::IRClosure() :wait_condvar(&wait_lock) {
+  Clear();
+}
+void IRClosure::Clear() {
+  user_profile = NULL;
+  before_ir_time = 0.0;
+  ir_time = 0.0;
+  ir_result.clear();
+  ir_seek = 0;
+  hit_display_rule = true;
+  ir_counter.Clear();
+  debug_info.clear();
+  ir_feature_time = "";
+  ir_trigger_time = "";
+  ir_seek_info.clear();
+  ir_monitor_data.clear();
+  perf_monitor_vec.clear();
+  check_creative_time = 0;
+  check_user_time = 0;
+  check_group_time = 0;
+  check_campaign_time = 0;
+  fill_ir_result_time = 0;
+  total_targeting_key_num = 0;
+  ir_log.clear();
+  selected_by_random_origin_creativeid_set_.clear();
+  creative_id_2_result_index.clear();
+  for (int i = 0; i < (int)p_index_accessor.size(); ++i) {
+    if (p_index_accessor[i]) {
+      delete p_index_accessor[i];
+      p_index_accessor[i] = NULL;
+    }
+  }
+  p_index_accessor.clear();
+  checked_keywords_map.clear();
+  checked_subject_matter_map.clear();
+  checked_user_map.clear();
+  checked_group_map.clear();
+  checked_campaign_map.clear();
+  checked_creative_map.clear();
+
+  checked_user_irlog_filtertype_map.clear();
+  checked_campaign_irlog_filtertype_map.clear();
+  checked_group_irlog_filtertype_map.clear();
+  checked_creative_irlog_filtertype_map.clear();
+
+  checked_campaign_expand_map.clear();
+  ir_merge_posterior_ctr_level = -1;
+  adid_filter_set.clear();
+  mf_pctr_cache.clear();
+  mf_pctr_creative2idx = NULL;
+  mf_pctr_idx2creative = NULL;
+
+  mf_pcvr_cache.clear();
+  mf_pcvr_creative2idx = NULL;
+  mf_pcvr_idx2creative = NULL;
+
+  dssm_user_hash_feature.clear();
+  dssm_user_vector_list.clear();
+  dssm_creative_vector_matrix = nullptr;
+
+  dssm_pcvr_weight_cache.clear();
+  dssm_pcvr_creative2idx = NULL;
+  dssm_pcvr_idx2creative = NULL;
+
+  for (int i = 0; i < (int)p_dynamic_creative_handler.size(); ++i) {
+    if (p_dynamic_creative_handler[i]) {
+      delete p_dynamic_creative_handler[i];
+      p_dynamic_creative_handler[i] = NULL;
+    }
+  }
+  p_dynamic_creative_handler.clear();
+  user_info.Clear();
+  environment.Clear();
+  debug_creative_ids.clear();
+  already_visited_accountid.clear();
+  user_experiment.clear();
+  is_time_cut = false;
+  cvr_exp_profile.Clear();
+  ocpc_lookalike_dmp_info.Clear();
+  // clear rta info
+  exclude_account_ids_.clear();
+  exclude_campaign_ids_.clear();
+  exclude_creative_ids_.clear();
+  include_account_ids_.clear();
+  include_campaign_ids_.clear();
+  include_creative_ids_.clear();
+  rat_info_map.clear();
+  rta_parall_end_ = false;
+}
+
+bool IRClosure::Init(const RequestClosure *request_closure) {
+  this->request_closure_ = request_closure;
+  this->user_profile = &(request_closure->ad_request->user_profile());
+  this->wolong_session = &(request_closure->ad_request->wolong_session());
+  InitUserInfo(*(request_closure->ad_request));
+  InitEnvironment(*(request_closure->ad_request));
+  ir_counter.Init(request_closure);
+  inverted_index_split_num = TriggerEnv::GetTriggerEnv()->inverted_index_split_num;
+  for (int i = 0; i <= inverted_index_split_num; ++i) {
+    p_index_accessor.push_back(new IndexAccessor(TriggerEnv::GetTriggerEnv()->index,
+                                                 TriggerEnv::GetTriggerEnv()->GetFeedbackMonitor()));
+    p_index_accessor[i]->Init();
+    // NOTE(liuxudong) : 为了保持并行化 Cache 一致，只有第一个 IndexAccessor 采用原子加载 Cache
+    // 后面的都采用直接赋值第一个 IndexAccessor 的 Cache 指针
+    if (i == 0) {
+      p_index_accessor[i]->InitCache();
+    } else {
+      p_index_accessor[i]->SetCache(p_index_accessor[0]);
+    }
+    p_index_accessor[i]->SetInvertedIndexSplitIndex(i);
+    p_index_accessor[i]->SetAdResourceId(request_closure_->adresource_id);
+    p_dynamic_creative_handler.push_back(new DynamicCreativeProcessor());
+    p_dynamic_creative_handler[i]->Init(request_closure, this);
+  }
+  checked_keywords_map.resize(inverted_index_split_num + 1);
+  checked_subject_matter_map.resize(inverted_index_split_num + 1);
+  checked_user_map.resize(inverted_index_split_num + 1);
+  checked_group_map.resize(inverted_index_split_num + 1);
+  checked_campaign_map.resize(inverted_index_split_num + 1);
+  checked_campaign_expand_map.resize(inverted_index_split_num + 1);
+  checked_creative_map.resize(inverted_index_split_num + 1);
+  already_visited_accountid.resize(inverted_index_split_num + 1);
+
+  checked_user_irlog_filtertype_map.resize(inverted_index_split_num + 1);
+  checked_campaign_irlog_filtertype_map.resize(inverted_index_split_num + 1);
+  checked_group_irlog_filtertype_map.resize(inverted_index_split_num + 1);
+  checked_creative_irlog_filtertype_map.resize(inverted_index_split_num + 1);
+
+  storage_base::JobWaiter waiter;
+  std::vector<OLDBParallelParams> param_vec;
+  if (FLAGS_enable_oldb_req_refact) {
+    InitOldbData(&param_vec);
+    TriggerEnv::GetTriggerEnv()->GetDBManager().ReqDataFromOldb(&param_vec, &waiter);
+  }
+
+  if (exp::GetBoolFlagValue(exp::EXP_BOOL_enable_dssm_v3)) {
+    // dssm ctr & dssm cvr model
+    FillMfPctrV3();
+  }
+  FillPcvr();
+  if (FLAGS_enable_oldb_req_refact) {
+    waiter.Wait();
+    ProcessOldbData(&param_vec);
+    request_closure->response->mutable_cvr_model_exp_user_profile()->CopyFrom(cvr_exp_profile);
+  }
+  // 根据历史展现，构造用户的同质性创意集
+  if (exp::GetBoolFlagValue(exp::EXP_BOOL_enable_account_diversity) ||
+      exp::GetBoolFlagValue(exp::EXP_BOOL_enable_filter_ir_similar_ad) ||
+      exp::GetBoolFlagValue(exp::EXP_BOOL_enable_filter_similar_ad_result)) {
+    request_closure->dicts.adid_similar_adids_dict->GetAdidsByHistoryAdids(
+      request_closure->close_adid_vector,
+      exp::GetDoubleFlagValue(exp::EXP_DOUBLE_sim_score_lower_ir),
+      &adid_filter_set);
+    VLOG(1) << "lvjun:closure->adid_filter_set_.size()=" << adid_filter_set.size();
+  }
+  // 这里设置 debug 的特殊检索参数
+  if (request_closure_->ad_request->debug_level() > 0) {
+    if (request_closure->debug_kv.count("debug_idea_id") > 0) {
+      std::vector<std::string> debug_creative_id_str;
+      base::SplitStringWithOptions(request_closure->debug_kv.at("debug_idea_id"), ",", true,
+                                   true, &debug_creative_id_str);
+      for (auto it = debug_creative_id_str.begin(); it != debug_creative_id_str.end(); it++) {
+        int32 creative = 0;
+        base::StringToInt(*it, &creative);
+        debug_creative_ids.push_back(creative);
+      }
+    }
+    if (debug_creative_ids.size()) {
+      SetJsonValue("IRClosureInit{debug_idea_ids", request_closure->debug_kv.at("debug_idea_id"),
+                   &this->debug_info);
+    }
+  }
+  if (request_closure->ad_request->has_user_profile() &&
+      request_closure->ad_request->user_profile().has_experiment()) {
+    std::vector<std::string> experiments;
+    base::SplitStringWithOptions(request_closure->ad_request->user_profile().experiment(), ";",
+                                 true, true, &experiments);
+    for (size_t i = 0; i < experiments.size(); ++i) {
+      std::vector<std::string> kv;
+      base::SplitStringWithOptions(experiments.at(i), "=", true, true, &kv);
+      if (kv.size() != 2) continue;
+      user_experiment[kv.at(0)] = kv.at(1);
+    }
+  }
+  // rta
+  auto rta_dict = TriggerDataManager::GetDict(kRtaCustomerDictName);
+  RtaCustomerDict* rta_dict_map = reinterpret_cast<RtaCustomerDict*>(rta_dict);
+  rta_account_map_ = rta_dict_map->GetRtaAccountMap();
+  rta_parall_end_ = false;
+  return true;
+}
+
+void IRClosure::InitOldbData(std::vector<OLDBParallelParams>* param_vec) {
+  // cvr model exp
+  if (exp::GetBoolFlagValue(exp::EXP_BOOL_enable_get_cvr_exp_profile)) {
+    param_vec->push_back(OLDBParallelParams());
+    OLDBParallelParams &param = param_vec->back();
+    param.key = &request_closure_->dmp_id;
+    param.reader = TriggerEnv::GetTriggerEnv()->GetDBManager().GetCvrExpProfileReader();
+    param.handler.SetTarget(&cvr_exp_profile);
+  }
+  // ocpc lookalike
+  {
+    param_vec->push_back(OLDBParallelParams());
+    OLDBParallelParams &param = param_vec->back();
+    param.key = &request_closure_->dmp_id;
+    param.reader = TriggerEnv::GetTriggerEnv()->GetDBManager().GetOcpcLookalikeReader();
+    param.handler.SetTarget(&ocpc_lookalike_dmp_info);
+  }
+}
+void IRClosure::ProcessOldbData(std::vector<OLDBParallelParams>* param_vec) {
+  for (auto& param : *param_vec) { // NOLINT
+    if (param.db_status.ok()) {
+      param.handler.Process(param.db_resp_str);
+    }
+  }
+}
+void IRClosure::FillMfPctrV3() {
+  bool enable_ir_mf_pctr = exp::GetBoolFlagValue(exp::EXP_BOOL_enable_ir_mf_pctr);
+  if (!enable_ir_mf_pctr) {
+    return;
+  }
+  MFVector user_vector = Eigen::MatrixXd::Zero(kMFCreativeVectorSize, 1);
+  MFVector user_vector_for_cvr = Eigen::MatrixXd::Zero(kMFCreativeVectorSize, 1);
+  const Eigen::MatrixXd *creative_vector = nullptr;
+  const Eigen::MatrixXd *creative_vector_for_cvr = nullptr;
+  if (!BuildDssmV3Vector(&user_vector, &user_vector_for_cvr, creative_vector, creative_vector_for_cvr)) {
+    LOG(ERROR) << "build dssm v3 vector error";
+    return;
+  }
+
+  if (creative_vector == nullptr) {
+    return;
+  }
+
+  // for ctr
+  Eigen::MatrixXd matrix_score = (*creative_vector) * user_vector;
+
+  int32 length = matrix_score.rows();
+  mf_pctr_cache.resize(length, 0.0);
+  for (int32 iidx = 0; iidx < length; ++iidx) {
+    mf_pctr_cache[iidx] = matrix_score(iidx, 0);
+  }
+
+  // for cvr
+  if (exp::GetBoolFlagValue(exp::EXP_BOOL_enable_dssm_v4_for_cvr) && creative_vector_for_cvr != nullptr) {
+    Eigen::MatrixXd cvr_matrix_score = (*creative_vector_for_cvr) * user_vector_for_cvr;
+
+    int32 cvr_length = cvr_matrix_score.rows();
+    mf_pcvr_cache.resize(cvr_length, 0.0);
+    for (int32 iidx = 0; iidx < cvr_length; ++iidx) {
+      mf_pcvr_cache[iidx] = cvr_matrix_score(iidx, 0);
+    }
+  }
+}
+
+void IRClosure::FillDssmUserHashFeature(const std::vector<std::string> &user_feature) {
+  dssm_user_hash_feature.clear();
+
+  for (size_t i = 0; i < user_feature.size(); ++i) {
+    int32 embedding_idx = static_cast<int32>(
+       base::CityHash64(user_feature.at(i).c_str(), user_feature.at(i).length()) % kDssmModelV3VocabSize);
+    dssm_user_hash_feature.push_back(embedding_idx);
+  }
+}
+
+bool IRClosure::BuildDssmV3Vector(MFVector *user_vector, MFVector *user_vector_for_cvr,
+                                  const Eigen::MatrixXd* &creative_vector,
+                                  const Eigen::MatrixXd* &creative_vector_for_cvr) {
+  int dssm_v4_for_cvr_dict_id = exp::GetIntFlagValue(exp::EXP_INT_dssm_v4_for_cvr_dict_id);
+  auto dssm_model_dict_cvr = MultiVersionTable<DssmModelV3Dict>::Get(dssm_v4_for_cvr_dict_id);
+  if (dssm_model_dict_cvr == NULL) {
+    return false;
+  }
+
+  // run dssm to infer user vector
+  std::vector<std::string> user_feature;
+  user_feature = dssm_model_dict_cvr->empty_value_;
+  if (user_feature.size() != kDssmModelV3QueryLen) {
+    LOG(ERROR) << "dssm user feature len wrong" << user_feature.size();
+    return false;
+  }
+
+  if (!BuildDssmV3UserFeature(&user_feature)) {
+    LOG(ERROR) << "build dssm raw user feature error";
+    return false;
+  }
+
+  FillDssmUserHashFeature(user_feature);
+
+  // model_v3
+  // if (!dssm_model_dict->GenerateUserVector(user_feature, user_vector)) {
+  //   LOG(ERROR) << "generate dssm user vector error";
+  //   return false;
+  // }
+
+  // store v3 user vector
+  // dssm_user_vector_list.clear();
+  // if (exp::GetBoolFlagValue(exp::EXP_BOOL_enable_log_dssm_user_vector)) {
+  //   for (size_t i = 0; i < kMFCreativeVectorSize; ++i) {
+  //     dssm_user_vector_list.push_back((*user_vector)(i, 0));
+  //   }
+  // }
+
+  // creative_vector = &(dssm_model_dict->creative_data_map_);
+  // mf_pctr_creative2idx = &(dssm_model_dict->creativeid2idx_map_);
+  // mf_pctr_idx2creative = &(dssm_model_dict->idx2creativeid_map_);
+
+  // v4 model is dict_1
+  if (exp::GetBoolFlagValue(exp::EXP_BOOL_enable_dssm_v4)) {
+    auto dssm_model_dict_ctr = MultiVersionTable<DssmModelV3Dict>::Get(1);
+    if (dssm_model_dict_ctr == NULL) {
+      return false;
+    }
+    if (!dssm_model_dict_ctr->GenerateUserVector(user_feature, user_vector)) {
+      LOG(ERROR) << "generate dssm user vector error";
+      return false;
+    }
+
+    dssm_user_vector_list.clear();
+    if (exp::GetBoolFlagValue(exp::EXP_BOOL_enable_log_dssm_user_vector)
+        && user_vector->rows() == kMFCreativeVectorSize) {
+      for (size_t i = 0; i < kMFCreativeVectorSize; ++i) {
+        dssm_user_vector_list.push_back((*user_vector)(i, 0));
+      }
+    }
+
+    creative_vector = &(dssm_model_dict_ctr->creative_data_map_);
+    mf_pctr_creative2idx = &(dssm_model_dict_ctr->creativeid2idx_map_);
+    mf_pctr_idx2creative = &(dssm_model_dict_ctr->idx2creativeid_map_);
+  }
+
+  if (exp::GetBoolFlagValue(exp::EXP_BOOL_enable_dssm_v4_for_cvr)) {
+    if (!dssm_model_dict_cvr->GenerateUserVector(user_feature, user_vector_for_cvr)) {
+      LOG(ERROR) << "generate dssm user vector for cvr error";
+      return false;
+    }
+    creative_vector_for_cvr = &(dssm_model_dict_cvr->creative_data_map_);
+    mf_pcvr_creative2idx = &(dssm_model_dict_cvr->creativeid2idx_map_);
+    mf_pcvr_idx2creative = &(dssm_model_dict_cvr->idx2creativeid_map_);
+  }
+
+  // store creative vector v3 or v4
+  dssm_creative_vector_matrix = creative_vector;
+
+  return true;
+}
+
+bool SortIndustryFeature(const std::pair<std::string, int>& f1, const std::pair<std::string, int>& f2) {
+  if (f1.second != f2.second) {
+    return f1.second > f2.second;
+  }
+  return f1.first > f2.first;
+}
+
+bool SortDomainFeature(const std::pair<std::string, double>& f1, const std::pair<std::string, double>& f2) {
+  if (f1.second != f2.second) {
+    return f1.second > f2.second;
+  }
+  return f1.first > f2.first;
+}
+
+void IRClosure::BuildDssmV3UserProfileFeature(std::vector<std::string> *user_feature) {
+  if (user_profile == NULL) {
+    return;
+  }
+
+  // tag
+  int max_tag_xss_num = 6;
+  int max_tag_ucweb_num = 3;
+
+  // category
+  int max_category_xss_num = 6;
+  int max_category_ucweb_num = 3;
+  int max_category_gaode_num = 4;
+  int max_category_bi_num = 1;
+
+  int max_topic_num = 4;
+
+  for (int profile_id = 0; profile_id < user_profile->profile_size(); ++profile_id) {
+    auto& profile = user_profile->profile(profile_id);
+    auto& source = profile.source();
+    if (profile.has_tag_feavec()) {
+      int top_k_f = 0;
+      int slot_idx = 0;
+      if (source == "xss") {
+        top_k_f = max_tag_xss_num;
+        slot_idx = 0;
+      } else if (source == "ucweb") {
+        top_k_f = max_tag_ucweb_num;
+        slot_idx = 6;
+      } else {
+        continue;
+      }
+      for (int i = 0; i < profile.tag_feavec().feature_size() && i < top_k_f; ++i) {
+        auto& tag = profile.tag_feavec().feature(i);
+        if (!tag.has_literal() || !tag.has_weight()) {
+          continue;
+        }
+        const std::string& literal =  tag.literal();
+        const double& weight = tag.weight();
+        std::string weight_str = "";
+        if (weight < 2.) {
+          weight_str = "_0";
+        } else if (weight < 10.) {
+          weight_str = "_1";
+        } else {
+          weight_str = "_2";
+        }
+        int cur_slot_idx = slot_idx + i;
+        if (cur_slot_idx >= 0 && cur_slot_idx < 9) {
+          (*user_feature)[cur_slot_idx] = "tag_" + source + "_" + literal + weight_str;
+        } else {
+          LOG(ERROR) << "dssm user feature beyond line" << cur_slot_idx;
+        }
+      }
+    }
+    if (profile.has_category_feavec()) {
+      int top_k_f = 0;
+      int slot_idx = 0;
+      if (source == "xss") {
+        top_k_f = max_category_xss_num;
+        slot_idx = 9;
+      } else if (source == "ucweb") {
+        top_k_f = max_category_ucweb_num;
+        slot_idx = 15;
+      } else if (source == "gaode") {
+        top_k_f = max_category_gaode_num;
+        slot_idx = 18;
+      } else if (source == "bi") {
+        top_k_f = max_category_bi_num;
+        slot_idx = 22;
+      } else {
+        continue;
+      }
+      for (int i = 0; i < profile.category_feavec().feature_size() && i < top_k_f; ++i) {
+        auto& category = profile.category_feavec().feature(i);
+        if (!category.has_id() || !category.has_weight()) {
+          continue;
+        }
+        const std::string& literal = base::IntToString(category.id());
+        const double& weight = category.weight();
+        std::string weight_str = "";
+        if (weight < 2.) {
+          weight_str = "_0";
+        } else if (weight < 10.) {
+          weight_str = "_1";
+        } else {
+          weight_str = "_2";
+        }
+        int cur_slot_idx = slot_idx + i;
+        if (cur_slot_idx >= 9 && cur_slot_idx < 23) {
+          (*user_feature)[cur_slot_idx] = "category_" + source + "_" + literal + weight_str;
+        } else {
+          LOG(ERROR) << "dssm user feature beyond line" << cur_slot_idx;
+        }
+      }
+    }
+    if (profile.has_topic_feavec() && source == "xss") {
+      int slot_idx = 23;
+      for (int i = 0; i < profile.topic_feavec().feature_size() && i < max_topic_num; ++i) {
+        auto& topic = profile.topic_feavec().feature(i);
+        if (!topic.has_literal() || !topic.has_weight()) {
+          continue;
+        }
+        const std::string& literal =  topic.literal();
+        int cur_slot_idx = slot_idx + i;
+        if (cur_slot_idx >= 23 && cur_slot_idx < 27) {
+          (*user_feature)[cur_slot_idx] = "topic_" + literal;
+        } else {
+          LOG(ERROR) << "dssm user feature beyond line" << cur_slot_idx;
+        }
+      }
+    }
+  }
+
+  // query
+  if (user_profile && user_profile->has_target()) {
+    std::vector<std::pair<std::string, double> > query_weight;
+    auto &query_target = user_profile->target().query_target();
+    for (int i = 0; i< query_target.size(); ++i) {
+      std::vector<std::string> query_segments;
+      base::SplitString(query_target.Get(i).keyword(), " ", &query_segments);
+      for (size_t qsi = 0; qsi < query_segments.size(); ++qsi) {
+        query_weight.push_back(std::make_pair(query_segments[qsi], query_target.Get(i).weight()));
+      }
+    }
+    std::sort(query_weight.begin(), query_weight.end(), SortDomainFeature);
+    size_t max_query_num = 5;
+    int slot_idx = 27;
+    for (int i = 0; i < query_weight.size() && i < max_query_num; ++i) {
+      int cur_slot_idx = slot_idx + i;
+      if (cur_slot_idx >= 27 && cur_slot_idx < 32) {
+        (*user_feature)[cur_slot_idx] = query_weight[i].first;
+      } else {
+        LOG(ERROR) << "dssm user feature beyond line" << cur_slot_idx;
+      }
+    }
+  }
+
+  // domain
+  if (user_profile && user_profile->has_target()) {
+    std::vector<std::pair<std::string, double> > domain_weight;
+    auto &domain_target  = user_profile->target().domain_target();
+    for (int i = 0; i< domain_target.size(); ++i) {
+      if (domain_target.Get(i).weight() > 30) {
+        domain_weight.push_back(std::make_pair(domain_target.Get(i).domain(), domain_target.Get(i).weight()));
+      }
+    }
+    std::sort(domain_weight.begin(), domain_weight.end(), SortDomainFeature);
+    size_t max_domain_num = 6;
+    int slot_idx = 32;
+    for (int i = 0; i < domain_weight.size() && i < max_domain_num; ++i) {
+      int cur_slot_idx = slot_idx + i;
+      if (cur_slot_idx >= 32 && cur_slot_idx < 38) {
+        (*user_feature)[cur_slot_idx] = "domain_" + domain_weight[i].first;
+      } else {
+        LOG(ERROR) << "dssm user feature beyond line" << cur_slot_idx;
+      }
+    }
+  }
+}
+
+void IRClosure::BuildDssmV3UserRtsFeature(std::vector<std::string> *user_feature) {
+  auto const &user_sum_show_click_history = request_closure_->user_sum_show_click_history;
+  (*user_feature)[131] = "rts_0_" + base::Uint64ToString(user_sum_show_click_history.user_48h_request);
+  (*user_feature)[132] = "rts_1_" + base::Uint64ToString(user_sum_show_click_history.user_48h_publish_ad);
+  (*user_feature)[133] =
+                       "rts_2_" + base::Uint64ToString(user_sum_show_click_history.user_48h_publish_search);
+  (*user_feature)[134] = "rts_3_" + base::Uint64ToString(user_sum_show_click_history.user_48h_show);
+  (*user_feature)[135] = "rts_4_" + base::Uint64ToString(user_sum_show_click_history.user_48h_click);
+  (*user_feature)[136] = "rts_5_" + base::Uint64ToString(user_sum_show_click_history.user_1h_publish);
+  (*user_feature)[137] = "rts_6_" + base::Uint64ToString(user_sum_show_click_history.user_1h_show);
+  (*user_feature)[138] = "rts_7_" + base::Uint64ToString(user_sum_show_click_history.user_1h_click);
+  (*user_feature)[139] = "rts_8_" + base::Uint64ToString(user_sum_show_click_history.user_30min_publish);
+  (*user_feature)[140] = "rts_9_" + base::Uint64ToString(user_sum_show_click_history.user_30min_show);
+  (*user_feature)[141] ="rts_10_" +base::Uint64ToString(user_sum_show_click_history.user_30min_click);
+
+  int slot_id = request_closure_->slot_id;
+
+  int request_count = 0;
+  uint64 last1req_unique_id = 0;
+
+  int last1req_publish = 0;
+  int last1req_show = 0;
+  int last1req_click = 0;
+
+  int adslotid_his_publish = 0;
+  int adslotid_his_show = 0;
+  int adslotid_his_click = 0;
+  int adslotid_pos4_his_publish = 0;
+  int adslotid_pos4_his_show = 0;
+  int adslotid_pos4_his_click = 0;
+  int adslotid_pos11_his_publish = 0;
+  int adslotid_pos11_his_show = 0;
+  int adslotid_pos11_his_click = 0;
+
+  std::vector<uint64> spacetime_show_list;
+  std::vector<uint64> spacetime_click_list;
+  size_t spacetime_max_num = 5;
+
+  auto &sorted_show_click_history = request_closure_->sorted_show_click_history;
+  for (auto it = sorted_show_click_history.begin(); it != sorted_show_click_history.end(); it++) {
+    request_count += 1;
+
+    if (it->second.is_show == true && it->second.is_click == false
+                   && spacetime_show_list.size() < spacetime_max_num) {
+      spacetime_show_list.push_back(it->second.ad_id);
+    }
+    if (it->second.is_show == true && it->second.is_click == true
+                   && spacetime_click_list.size() < spacetime_max_num) {
+      spacetime_click_list.push_back(it->second.ad_id);
+    }
+
+    if (request_count == 1) {
+      (*user_feature)[142] = "rts_11_" + base::Uint64ToString(it->first/60/30);
+      last1req_unique_id = it->second.unique_id;
+    }
+
+    if (it->second.unique_id == last1req_unique_id) {
+      if (it->second.ad_id != 0) {
+        last1req_publish += 1;
+      }
+      if (it->second.is_show == true) {
+        last1req_show += 1;
+      }
+      if (it->second.is_click == true) {
+        last1req_click += 1;
+      }
+    }
+    if (it->second.slot_id == slot_id && slot_id != 0) {
+      if (it->second.ad_id != 0) {
+        adslotid_his_publish += 1;
+        if (it->second.slot_id == 51) {
+          if (it->second.pos_id == "4") {
+            adslotid_pos4_his_publish += 1;
+          } else {
+            adslotid_pos11_his_publish += 1;
+          }
+        }
+      }
+      if (it->second.is_show == true) {
+        adslotid_his_show += 1;
+        if (it->second.slot_id == 51) {
+          if (it->second.pos_id == "4") {
+            adslotid_pos4_his_show += 1;
+          } else {
+            adslotid_pos11_his_show += 1;
+          }
+        }
+      }
+      if (it->second.is_click == true) {
+        adslotid_his_click += 1;
+        if (it->second.slot_id == 51) {
+          if (it->second.pos_id == "4") {
+            adslotid_pos4_his_click += 1;
+          } else {
+            adslotid_pos11_his_click += 1;
+          }
+        }
+      }
+    }
+  }
+  (*user_feature)[143] = "rts_12_" + base::IntToString(last1req_publish);
+  (*user_feature)[144] = "rts_13_" + base::IntToString(last1req_show);
+  (*user_feature)[145] = "rts_14_" + base::IntToString(last1req_click);
+
+  (*user_feature)[146] = "rts_15_" + base::IntToString(adslotid_his_publish);
+  (*user_feature)[147] = "rts_16_" + base::IntToString(adslotid_his_show);
+  (*user_feature)[148] = "rts_17_" + base::IntToString(adslotid_his_click);
+  // 该字段在离线抽了，但字段含义不符合预期，dssm 模型里面没有用，因此这里跳过
+  // rts_feature[18] = "rts_18_"
+  //          + base::Uint64ToString(model_detail_infos.adslotid_his_show_seconds_delta()/60/30);
+  (*user_feature)[149] = "rts_19_" + base::IntToString(adslotid_pos4_his_publish);
+  (*user_feature)[150] = "rts_20_" + base::IntToString(adslotid_pos4_his_show);
+  (*user_feature)[151] = "rts_21_" + base::IntToString(adslotid_pos4_his_click);
+  (*user_feature)[152] = "rts_22_" + base::IntToString(adslotid_pos11_his_publish);
+  (*user_feature)[153] = "rts_23_" + base::IntToString(adslotid_pos11_his_show);
+  (*user_feature)[154] = "rts_24_" + base::IntToString(adslotid_pos11_his_click);
+
+  for (size_t i = 0; i < spacetime_show_list.size(); ++i) {
+    int cur_slot_idx = 155 + i;
+    if (cur_slot_idx < kDssmModelV3QueryLen) {
+      (*user_feature)[cur_slot_idx] = "rts_show_" + base::Uint64ToString(spacetime_show_list.at(i));
+    } else {
+      LOG(ERROR) << "dssm user feature beyond line" << cur_slot_idx;
+    }
+  }
+  for (size_t i = 0; i < spacetime_click_list.size(); ++i) {
+    int cur_slot_idx = 160 + i;
+    if (cur_slot_idx < kDssmModelV3QueryLen) {
+      (*user_feature)[cur_slot_idx] = "rts_click_" + base::Uint64ToString(spacetime_click_list.at(i));
+    } else {
+      LOG(ERROR) << "dssm user feature beyond line" << cur_slot_idx;
+    }
+  }
+}
+
+void IRClosure::BuildDssmV3UserBehaviorFeature(std::vector<std::string> *user_feature) {
+  std::string dssm_user_behavior_source =
+    exp::GetStringFlagValue(exp::EXP_STRING_dssm_user_behavior_source);
+  for (int defined_idx = 0; defined_idx < user_profile->user_defined_size(); ++defined_idx) {
+    auto& defined_info = user_profile->user_defined(defined_idx);
+    if (!defined_info.has_source()) {
+      continue;
+    }
+    std::string defined_source = defined_info.source();
+    if (defined_source != dssm_user_behavior_source) {
+      continue;
+    }
+    if (!defined_info.has_content()) {
+      continue;
+    }
+    std::string defined_content = defined_info.content();
+    std::vector<std::string> parts;
+    base::SplitString(defined_content, "|", &parts);
+    if (parts.size() != 9) {
+      LOG(ERROR) << "dssm user behavior len not 9. real len:" << parts.size();
+      continue;
+    }
+    // click|click_account|click_industry|active|active_account|active_industry|web|web_account|web_industry
+    int max_click_num = 12;
+    int max_active_num = 6;
+    int max_web_num = 6;
+    for (size_t part_idx = 0; part_idx < parts.size(); ++part_idx) {
+      if (parts.at(part_idx).empty()) {
+        continue;
+      }
+      if (part_idx == 0 || part_idx == 3 || part_idx == 6) {
+        int slot_idx_begin = 59;
+        int max_history_num = max_click_num;
+        if (part_idx == 3) {
+          slot_idx_begin = 95;
+          max_history_num = max_active_num;
+        } else if (part_idx == 6) {
+          slot_idx_begin = 113;
+          max_history_num = max_web_num;
+        }
+        std::vector<std::string> creative_id;
+        base::SplitString(parts.at(part_idx), ",", &creative_id);
+        int begin_id_idx = std::max(0, (int)creative_id.size() - max_history_num);
+        for (size_t id_idx = begin_id_idx; id_idx < creative_id.size(); ++id_idx) {
+          int cur_slot_idx = id_idx - begin_id_idx + slot_idx_begin;
+          if (cur_slot_idx < kDssmModelV3QueryLen) {
+            (*user_feature)[cur_slot_idx] = "creative_id_" + creative_id.at(id_idx);
+          } else {
+            LOG(ERROR) << "dssm user feature beyond line" << cur_slot_idx;
+          }
+        }
+      } else if (part_idx == 1 || part_idx == 4 || part_idx == 7) {
+        int slot_idx_begin = 71;
+        int max_history_num = max_click_num;
+        if (part_idx == 4) {
+          slot_idx_begin = 101;
+          max_history_num = max_active_num;
+        } else if (part_idx == 7) {
+          slot_idx_begin = 119;
+          max_history_num = max_web_num;
+        }
+        std::vector<std::string> account_id;
+        base::SplitString(parts.at(part_idx), ",", &account_id);
+        int begin_id_idx = std::max(0, (int)account_id.size() - max_history_num);
+        for (size_t id_idx = begin_id_idx; id_idx < account_id.size(); ++id_idx) {
+          int cur_slot_idx = id_idx - begin_id_idx + slot_idx_begin;
+          if (cur_slot_idx < kDssmModelV3QueryLen) {
+            (*user_feature)[cur_slot_idx] = "account_id_" + account_id.at(id_idx);
+          } else {
+            LOG(ERROR) << "dssm user feature beyond line" << cur_slot_idx;
+          }
+        }
+      } else if (part_idx == 2 || part_idx == 5 || part_idx == 8) {
+        int slot_idx_begin = 83;
+        int max_history_num = max_click_num;
+        if (part_idx == 5) {
+          slot_idx_begin = 107;
+          max_history_num = max_active_num;
+        } else if (part_idx == 8) {
+          slot_idx_begin = 125;
+          max_history_num = max_web_num;
+        }
+        std::vector<std::string> industry_id;
+        base::SplitString(parts.at(part_idx), ",", &industry_id);
+        std::map<std::string, int> industry_fre;
+        for (size_t i = 0; i < industry_id.size(); ++i) {
+          if (industry_fre.find(industry_id.at(i)) == industry_fre.end()) {
+            industry_fre[industry_id.at(i)] = 1;
+          } else {
+            industry_fre[industry_id.at(i)] += 1;
+          }
+        }
+        std::vector<std::pair<std::string, int>> industry_fre_pair;
+        for (auto iter = industry_fre.begin(); iter != industry_fre.end(); ++iter) {
+          industry_fre_pair.push_back(std::make_pair(iter->first, iter->second));
+        }
+        std::sort(industry_fre_pair.begin(), industry_fre_pair.end(), SortIndustryFeature);
+        for (size_t id_idx = 0; id_idx < industry_fre_pair.size(); ++id_idx) {
+          int cur_slot_idx = id_idx + slot_idx_begin;
+          if (cur_slot_idx < kDssmModelV3QueryLen) {
+          (*user_feature)[cur_slot_idx] =
+              "click_industry_" + industry_fre_pair.at(id_idx).first
+              + "_" + base::IntToString(industry_fre_pair[id_idx].second);
+          } else {
+            LOG(ERROR) << "dssm user feature beyond line" << cur_slot_idx;
+          }
+        }
+      }  // industry
+    }  // part
+  }  // user defined
+}
+
+
+void IRClosure::BuildDssmV3UserSearchInfoFeature(std::vector<std::string> *user_feature) {
+  (*user_feature)[38] = "dmp_id_" +  request_closure_->dmp_id;
+
+  const GetAdRequest *ad_request = request_closure_->ad_request;
+
+  (*user_feature)[39] = "resource_id_" + base::IntToString(request_closure_->adresource_id);
+  (*user_feature)[40] = "bucket_id_" + base::IntToString(request_closure_->bucket_id);
+  (*user_feature)[41] = "slot_id_" + base::IntToString(request_closure_->slot_id);
+
+  time_t now_t_1 = time(NULL);
+  struct tm tms;
+  localtime_r(&now_t_1, &tms);
+  (*user_feature)[42] = "search_time_hour_" + base::IntToString(tms.tm_hour);
+
+
+  int32 slot_index = request_closure_->slot_index;
+  if (ad_request->ad_pos_info(slot_index).has_channel_info()) {
+    if (ad_request->ad_pos_info(slot_index).channel_info().has_first_channel_id()) {
+      int64 channel1 = ad_request->ad_pos_info(slot_index).channel_info().first_channel_id();
+      (*user_feature)[43] = "search_channel_" + base::Int64ToString(channel1);
+    }
+  }
+
+  if (ad_request->has_zilong_info() && ad_request->zilong_info().has_screen_num()) {
+    int screen_num = ad_request->zilong_info().screen_num();
+    (*user_feature)[44] = "screen_num_" + base::IntToString(screen_num);
+  }
+
+  (*user_feature)[45] = "bucket_type_" + base::IntToString(request_closure_->bucket_type);
+
+  // 由于特征抽取线上线下不一致，舍弃该字段
+  // if (ad_request->has_ad_device_info()) {
+  //   auto &ad_device_info = ad_request->ad_device_info();
+  //   if (ad_device_info.has_os()) {
+  //     (*user_feature)[46] = "os_" + ad_device_info.os();
+  //   }
+  // }
+}
+
+
+void IRClosure::BuildDssmV3UserDemographFeature(std::vector<std::string> *user_feature) {
+  if (user_profile == NULL) {
+    return;
+  }
+
+  if (user_profile->user_info().has_age_class()) {
+    std::string ageclass = base::IntToString(user_profile->user_info().age_class());
+    (*user_feature)[46] = "dmp_age_class_" + ageclass;
+  }
+
+  if (user_profile->user_info().has_gender()) {
+    std::string gender = base::IntToString(user_profile->user_info().gender());
+    (*user_feature)[47] = "dmp_gender_" + gender;
+  }
+
+  if (user_profile->user_info().city_size() > 0) {
+    for (size_t city_num = 0; city_num < user_profile->user_info().city_size(); ++city_num) {
+      const std::string &city = user_profile->user_info().city(city_num);
+      (*user_feature)[48] = "dmp_city_" + base::StringReplace(city, " ", "", true);
+      break;
+    }
+  }
+
+  if (user_profile->user_info().has_buyer_star_name()) {
+    const std::string &buyer_star_name = user_profile->user_info().buyer_star_name();
+    if (!buyer_star_name.empty()) {
+      (*user_feature)[49] = "buyer_star_name_" + base::StringReplace(buyer_star_name, " ", "", true);
+    }
+  }
+
+  if (user_profile->user_info().has_taobao_level()) {
+    const std::string &taobao_level= user_profile->user_info().taobao_level();
+    if (!taobao_level.empty()) {
+      (*user_feature)[50] = "taobao_level_" + base::StringReplace(taobao_level, " ", "", true);
+    }
+  }
+
+  if (user_profile->user_info().has_tmall_level()) {
+    const std::string &tmall_level = user_profile->user_info().tmall_level();
+    if (!tmall_level.empty()) {
+      (*user_feature)[51] = "tmall_level_" + base::StringReplace(tmall_level, " ", "", true);
+    }
+  }
+
+  if (user_profile->user_info().has_has_car_p()) {
+    const std::string &has_car_p = user_profile->user_info().has_car_p();
+    if (!has_car_p.empty()) {
+      (*user_feature)[52] = "has_car_" + base::StringReplace(has_car_p, " ", "", true);
+    }
+  }
+
+  if (user_profile->user_info().has_has_house_p()) {
+    const std::string &has_house_p = user_profile->user_info().has_house_p();
+    if (!has_house_p.empty()) {
+      (*user_feature)[53] = "has_house_" + base::StringReplace(has_house_p, " ", "", true);
+    }
+  }
+
+  if (user_profile->user_info().has_car_brand()) {
+    const std::string &car_brand = user_profile->user_info().car_brand();
+    if (!car_brand.empty()) {
+      (*user_feature)[54] = "car_brand_" + base::StringReplace(car_brand, " ", "", true);
+    }
+  }
+
+  if (user_profile->user_info().has_car_series()) {
+    const std::string &car_series = user_profile->user_info().car_series();
+    if (!car_series.empty()) {
+      (*user_feature)[55] = "car_series_" + base::StringReplace(car_series, " ", "", true);
+    }
+  }
+
+  if (user_profile->user_info().has_school_p()) {
+    const std::string &school_p = user_profile->user_info().school_p();
+    if (!school_p.empty()) {
+      (*user_feature)[56] = "school_" + base::StringReplace(school_p, " ", "", true);
+    }
+  }
+
+  if (user_profile->user_info().has_career_p()) {
+    const std::string &career_p = user_profile->user_info().career_p();
+    if (!career_p.empty()) {
+      (*user_feature)[57] = "career_" + base::StringReplace(career_p, " ", "", true);
+    }
+  }
+
+  if (user_profile->user_info().has_degree_p()) {
+    const std::string &degree_p = user_profile->user_info().degree_p();
+    if (!degree_p.empty()) {
+      (*user_feature)[58] = "degree_" + base::StringReplace(degree_p, " ", "", true);
+    }
+  }
+}
+
+
+bool IRClosure::BuildDssmV3UserFeature(std::vector<std::string> *user_feature) {
+  BuildDssmV3UserProfileFeature(user_feature);
+  BuildDssmV3UserSearchInfoFeature(user_feature);
+  BuildDssmV3UserDemographFeature(user_feature);
+  BuildDssmV3UserBehaviorFeature(user_feature);
+  BuildDssmV3UserRtsFeature(user_feature);
+
+  return true;
+}
+
+
+bool IRClosure::BuildDssmCvrUserFeature(std::vector<std::string> *user_feature) {
+  if (user_profile == NULL) {
+    return false;
+  }
+
+  if (user_feature->size() != kCvrDssmQueryLen) {
+    return false;
+  }
+  size_t max_tag_xss_num = 6;
+  size_t max_tag_ucweb_num = 3;
+  size_t max_category_xss_num = 5;
+  size_t max_category_ucweb_num = 3;
+  size_t max_category_bi_num = 3;
+  for (size_t profile_id = 0; profile_id < user_profile->profile_size(); ++profile_id) {
+    auto& profile = user_profile->profile(profile_id);
+    auto& source = profile.source();
+    if (profile.has_tag_feavec()) {
+      size_t top_k_f = 0;
+      size_t slot_idx = 0;
+      std::string prefix = "";
+      if (source == "xss") {
+        top_k_f = max_tag_xss_num;
+        prefix = "3x_";
+        slot_idx = 0;
+      } else if (source == "ucweb") {
+        top_k_f = max_tag_ucweb_num;
+        slot_idx = 6;
+        prefix = "3u_";
+      } else {
+        continue;
+      }
+
+      for (size_t i = 0; i < profile.tag_feavec().feature_size() && i < top_k_f; ++i) {
+        auto& tag = profile.tag_feavec().feature(i);
+        if (!tag.has_literal() || !tag.has_weight()) {
+          continue;
+        }
+        const std::string& literal =  tag.literal();
+        (*user_feature)[slot_idx] = prefix + literal;
+        ++slot_idx;
+      }
+    }
+    if (profile.has_category_feavec()) {
+      size_t top_k_f = 0;
+      size_t slot_idx = 0;
+      std::string prefix = "";
+      if (source == "xss") {
+        top_k_f = max_category_xss_num;
+        slot_idx = 9;
+        prefix = "4x_";
+      } else if (source == "ucweb") {
+        top_k_f = max_category_ucweb_num;
+        slot_idx = 14;
+        prefix = "4u_";
+      } else if (source == "bi") {
+        top_k_f = max_category_bi_num;
+        prefix = "4b_";
+        slot_idx = 17;
+      } else {
+        continue;
+      }
+      for (size_t i = 0; i < profile.category_feavec().feature_size() && i < top_k_f; ++i) {
+        auto& category = profile.category_feavec().feature(i);
+        if (!category.has_id() || !category.has_weight()) {
+          continue;
+        }
+        const std::string& literal = base::IntToString(category.id());
+        (*user_feature)[slot_idx] = prefix + literal;
+        ++slot_idx;
+      }
+    }
+  }
+  // ad_resource_id
+  (*user_feature)[20] = "7_" + base::IntToString(request_closure_->adresource_id);
+  // bucket_id
+  (*user_feature)[21] = "8_" + base::IntToString(request_closure_->bucket_id);
+  int32 slot_id = 0;
+  int32 slot_index = request_closure_->slot_index;
+  const GetAdRequest *ad_request = request_closure_->ad_request;
+  if (ad_request->ad_pos_info(slot_index).has_slot_id()) {
+    slot_id = ad_request->ad_pos_info(slot_index).slot_id();
+    (*user_feature)[22] = "9_" + base::IntToString(slot_id);
+  }
+  // age
+  if (user_profile->user_info().has_age_class()) {
+    std::string ageclass = base::IntToString(user_profile->user_info().age_class());
+    (*user_feature)[23] = "10_" + ageclass;
+  }
+  // gender
+  if (user_profile->user_info().has_gender()) {
+    std::string gender = base::IntToString(user_profile->user_info().gender());
+    (*user_feature)[24] = "11_" + gender;
+  }
+  // city
+  if (user_profile->user_info().city_size() > 0) {
+    for (size_t city_num = 0; city_num < user_profile->user_info().city_size(); ++city_num) {
+      std::string city = user_profile->user_info().city(city_num);
+      (*user_feature)[25] = "12_" + city;
+      break;
+    }
+  }
+  // history click
+  size_t max_click_creative_num = 5;
+  std::set<std::string> user_click_creative;
+  for (size_t idx = 0; idx < request_closure_->sorted_click_history.size()
+       && user_click_creative.size() < max_click_creative_num; ++idx) {
+    auto const &one_history = request_closure_->sorted_click_history.at(idx);
+    auto const &one_history_info = one_history.second;
+    if (one_history_info.ad_id != 0) {
+      user_click_creative.insert(base::IntToString(one_history_info.ad_id));
+    }
+  }
+  size_t click_slot_idx = 26;
+  for (auto it = user_click_creative.begin(); it != user_click_creative.end(); ++it) {
+    (*user_feature)[click_slot_idx] = "13_" + *it;
+    ++click_slot_idx;
+  }
+
+  return true;
+}
+void IRClosure::FillPcvr() {
+  bool enable_dssm_pcvr = exp::GetBoolFlagValue(exp::EXP_BOOL_enable_dssm_pcvr);
+  if (!enable_dssm_pcvr) {
+    return;
+  }
+  if (NULL == user_profile) {
+    return;
+  }
+  int dssm_cvr_model_version = exp::GetIntFlagValue(exp::EXP_INT_dssm_cvr_model_version);
+  const CvrDssmModelDict* dssm_model_dict = MultiVersionTable<CvrDssmModelDict>::Get(dssm_cvr_model_version);
+  if (dssm_model_dict == NULL) {
+    return;
+  }
+  // 构建默认用户特征
+  std::vector<std::string> user_feature;
+  dssm_model_dict->BuildDefaultUserVec(&user_feature);
+  // 根据用户画像构建用户特征
+  if (!BuildDssmCvrUserFeature(&user_feature)) {
+    return;
+  }
+  // 计算用户向量
+  CvrQueryVector user_vector = Eigen::MatrixXd::Zero(kCvrDssmL3WeightLen, 1);
+  if (!dssm_model_dict->GenerateUserVector(user_feature, &user_vector)) {
+    return;
+  }
+  // 获取 creative 向量
+  const Eigen::MatrixXd *creative_vector = NULL;
+  if (!dssm_model_dict->GetCreativeVector(creative_vector, dssm_pcvr_creative2idx, dssm_pcvr_idx2creative)) {
+    return;
+  }
+  // idea 向量和 user 向量相乘
+  Eigen::MatrixXd matrix_score = (*creative_vector) * user_vector;
+  int32 length = matrix_score.rows();
+  dssm_pcvr_weight_cache.resize(length, 0.0);
+  for (int32 i = 0; i < length; ++i) {
+    dssm_pcvr_weight_cache[i] = matrix_score(i, 0);
+  }
+}
+
+void IRClosure::InitUserInfo(const GetAdRequest &request) {
+  if (request.has_ad_device_info()) {
+    // 获取操作系统型号
+    auto &ad_device_info = request.ad_device_info();
+    if (ad_device_info.has_os()) {
+      int32 os = ad_device_info.os();
+      if (os == OsType::kIosOs) {
+        user_info.os = &exp::GetStringFlagValue(exp::EXP_STRING_dynamic_creative_ios_alias);
+      } else if (os == OsType::kAndroidOs) {
+        user_info.os = &exp::GetStringFlagValue(exp::EXP_STRING_dynamic_creative_android_alias);
+      }
+    }
+    // 获取设备型号
+    if (ad_device_info.has_device()) {
+      auto * p_dict = MultiVersionTable<DynamicCreativeDeviceTypeDict>::Get(0);
+      const std::string * p_type = NULL;
+      if (p_dict->GetP(ad_device_info.device(), p_type)) {
+        user_info.device = p_type;
+      }
+    }
+  }
+  if (request.has_user_profile() && request.user_profile().has_user_info()) {
+    auto &p_user_info = request.user_profile().user_info();
+    if (p_user_info.has_gender()) {
+      // int32 0:female 1:male
+      if (p_user_info.gender() == 0) {
+        user_info.gender = &exp::GetStringFlagValue(exp::EXP_STRING_dynamic_creative_female_alias);
+      } else if (p_user_info.gender() == 1) {
+        user_info.gender = &exp::GetStringFlagValue(exp::EXP_STRING_dynamic_creative_male_alias);
+      }
+    }
+    if (p_user_info.has_age()) {
+      // int32
+      auto * p_dict = MultiVersionTable<DynamicCreativeAgeAliasDict>::Get(0);
+      const std::string * p_age = NULL;
+      if (p_dict->GetP(p_user_info.age(), p_age)) {
+        user_info.age = p_age;
+      }
+    }
+    if (p_user_info.has_constellation()) {
+      user_info.constellation = &(p_user_info.constellation());
+    }
+  }
+  if (request.has_region_info()) {
+    auto &p_region_info = request.region_info();
+    if (p_region_info.business_name_size() > 0) {
+      // 默认使用第一个取到的商圈
+      user_info.business_name = &p_region_info.business_name(0);
+    }
+    if (p_region_info.has_valid_province()) {
+      user_info.province = &p_region_info.valid_province();
+    }
+    if (p_region_info.has_valid_city()) {
+      user_info.city = &p_region_info.valid_city();
+    }
+  }
+}
+
+void IRClosure::InitEnvironment(const GetAdRequest &request) {
+  base::Time::Exploded ex;
+  base::Time time(base::Time::Now());
+  time.LocalExplode(&ex);
+  environment.year = ex.year;
+  environment.month = ex.month;
+  environment.day_of_week = ex.day_of_week;
+  environment.day_of_month = base::IntToString(ex.day_of_month);
+  auto * p_dict = MultiVersionTable<DynamicCreativeDateAliasDict>::Get(0);
+  if (p_dict == NULL) {
+    return;
+  }
+  const std::string * p_alias= NULL;
+  if (p_dict->GetP(ex.day_of_week, p_alias)) {
+    environment.day_of_week_alias = p_alias;
+  } else {
+    LOG(ERROR) << " Get day_of_week error : " << ex.day_of_week;
+  }
+  p_alias = NULL;
+  if (p_dict->GetP(ex.day_of_month + 100 * ex.month, p_alias)) {
+    environment.day_of_month_alias = p_alias;
+  } else {
+    LOG(ERROR) << " Get day_of_month error : " << ex.day_of_month << "/" << ex.month;
+  }
+}
+}
+}
