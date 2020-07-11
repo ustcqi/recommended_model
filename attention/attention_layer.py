@@ -176,6 +176,8 @@ def multihead_attention(queries, keys, values, keys_length, num_heads):
     K_ = tf.concat(tf.split(K, num_heads, axis=2), axis=0)
     V_ = tf.concat(tf.split(V, num_heads, axis=2), axis=0)
 
-    # [B*h T_q Hv]
+    # [B*h T_q Hv] Hv=H/h
     outputs = scaled_dot_product_attention(Q_, K_, V_, keys_length)
+    # [B
     outputs = tf.concat(tf.split(outputs, num_head, axis=0), axis=2)
+    return output
