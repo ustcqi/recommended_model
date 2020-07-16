@@ -40,7 +40,7 @@ class TextCNN(object):
       self.output = tf.add(tf.matmul(self.h_pooled, self.W), self.b, name="output")
 
     with tf.name_scope("regularizer"):
-      self.l2_loss = FLAGS.l2_lambda * tf.nn.l2_loss(self.W) + tf.nn.l2_loss(self.b)
+      self.l2_loss = FLAGS.l2_lambda * (tf.nn.l2_loss(self.W) + tf.nn.l2_loss(self.b))
 
     with tf.name_scope("classfication"):
       if FLAGS.output_num == 1:
@@ -48,7 +48,7 @@ class TextCNN(object):
         self.loss = tf.reduce_mean(tf.nn.sigmoid_cross_entropy_with_logits(labels=self.label, logits=self.output, name="bi_loss"))
       else:
         self.score = tf.nn.softmax(self.output, name="multi_score") 
-        self.loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.label, logits=self.output, name="multi_loss"))
+        self.loss = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=self.label, logits=self.output, name="multi_loss")) + self.l2_loss
         self.max_score_label = tf.argmax(self.score, axis=1, name="max_score_label")
         self.correct_predictions = tf.equal(self.max_score_label, tf.argmax(self.label, 1))
         self.accuracy = tf.reduce_mean(tf.cast(self.correct_predictions, 'float'), name="accuracy")
