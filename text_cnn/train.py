@@ -6,6 +6,7 @@ os.environ['CUDA_VISIBLE_DEVICES'] = '1'
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2' 
 import sys 
 import logging
+import time
 
 import numpy as np
 from sklearn.metrics import roc_auc_score
@@ -15,11 +16,17 @@ from text_cnn import TextCNN
 from flags import FLAGS
 from data_iterator import DataIterator
 
+cur_time = time.strftime('%Y%m%d-%H%M',time.localtime(time.time()))
+
+log_format = '%(asctime)s - %(levelname)s - %(message)s'
+log_file = './log/' + cur_time + '.log'
+logging.basicConfig(filename=log_file, level=logging.INFO, format=log_format)
+
 def eval(sess, model):
   iterator = DataIterator(params["test_file"], params["test_data_size"], params["test_data_size"])
   for x, y in iterator:
     accuracy, loss = sess.run([model.accuracy, model.loss], feed_dict={model.input : x, model.label : y})
-    print("accuracy:%.6f, test_loss:%.6f" % (accuracy, loss))
+    logging.info("accuracy:%.6f, test_loss:%.6f" % (accuracy, loss))
 
 def main(params):
   text_cnn = TextCNN(params)
@@ -40,7 +47,7 @@ def main(params):
                                                        feed_dict={text_cnn.input : x, text_cnn.label : y})
         sum_loss += loss
         if global_step % 100 == 0:
-          print("global_step:%d, loss:%.6f" % (global_step, sum_loss/100))
+          logging.info("global_step:%d, loss:%.6f" % (global_step, sum_loss/100))
           eval(sess, text_cnn)
           sum_loss = 0.0
 

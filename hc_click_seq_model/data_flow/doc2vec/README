@@ -1,0 +1,20 @@
+#############################Doc2Vec 训练数据流文档#############################
+#***       Author: qichao         ***#
+#***      Version: v_1            ***#
+#***         Date: 2018/03/09     ***#
+#***  Description:                ***#
+################################################################################
+
+一. 使用方法
+ 1. sh -x doc2vec.sh 20180308
+    20180308 表示对这一天的 idea.txt 中的 idea title进行训练.
+ 2. d2v.conf 是配置文件, 里面有训练 doc2vec 的参数.
+
+二. 数据流程
+ 1. 对 idea.txt 解析, 获取 idea_id 和 idea title 集合
+ 2. 对 1 中的 title 集合切词生成一个新的文件
+ 3. 对 2 中的文件作为模型输入, 然后训练生成的结果在 data 目录中, 主要是 vector.txt 和 model.txt
+ 4. 生成 vocab.idea, 里面是 idea 的集合
+ 4. 生成的 vector.txt 会作为 nmt 的 embedding 使用, 由于 nmt 会在 vocab.idea 最开始加 3 个字符,
+    因此在 vector.txt 开始添加 3 行的零向量
+

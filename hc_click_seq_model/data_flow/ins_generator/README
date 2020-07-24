@@ -1,0 +1,20 @@
+############################样本生成模块数据流文档##################################
+#***       Author: qichao         ***#
+#***      Version: v_1            ***#
+#***         Date: 2018/03/09     ***#
+#***  Description:                ***#
+###################################################################################
+
+一. 使用方法
+  1. sh -x instance_flow.sh 20180308
+     20180308 表示抽取这一天之前的样本
+  2. ins.conf 里面包含样本生成模块的相关配置 
+
+二. 数据流程
+  1. 先按天抽取 /user/hive/warehouse/huichuandb.db/tb_ad_real_display_click_day 日志中
+     uid, idea_id, timestamp的信息
+  2. 在对 1 中的数据合并, 格式为 uid \t idea_id1-idea_id2-...-idea_idn \t timestamp_1-timestamp_2-...-timestampe_n
+     其中 uid 不会有重复数据并且 idea sequence 按照 timestamp 排序
+  3. 对 2 中的中间样本切分生成最终样本
+  4. 把最终样本合并到一个文件
+

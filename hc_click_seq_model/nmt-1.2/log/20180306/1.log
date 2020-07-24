@@ -1,0 +1,502 @@
+909022
+# Job id 0
+# hparams:
+  src=idea
+  tgt=idea
+  train_prefix=/app/user/qichao/ali/seq_model/seq2seq/nmt-1.2/data/20180305/train
+  dev_prefix=None
+  test_prefix=/app/user/qichao/ali/seq_model/seq2seq/nmt-1.2/data/20180305/test
+  out_dir=/app/user/qichao/ali/seq_model/seq2seq/nmt-1.2/models/20180305/1
+# Vocab file /app/user/qichao/ali/seq_model/seq2seq/nmt-1.2/models/20180305/vocab.idea exists
+The first 3 vocab words [67, 68, 69] are not [<unk>, <s>, </s>]
+  using source vocab for target
+  saving hparams to /app/user/qichao/ali/seq_model/seq2seq/nmt-1.2/models/20180305/1/hparams
+  attention=bahdanau
+  attention_architecture=standard
+  batch_size=64
+  beam_width=0
+  best_bleu=0
+  best_bleu_dir=/app/user/qichao/ali/seq_model/seq2seq/nmt-1.2/models/20180305/1/best_bleu
+  bpe_delimiter=None
+  colocate_gradients_with_ops=True
+  decay_factor=0.98
+  decay_steps=1000
+  dev_prefix=None
+  doc2vec_emb=/app/user/qichao/ali/seq_model/seq2seq/nmt-1.2/data/20180305/doc2vec_emb
+  dropout=0.2
+  emb_trainable=True
+  encoder_type=uni
+  eos=</s>
+  epoch_step=0
+  forget_bias=1.0
+  hidden_state_file=/app/user/qichao/ali/seq_model/seq2seq/nmt-1.2/models/20180305/hidden_state
+  infer_batch_size=32
+  init_op=uniform
+  init_weight=0.1
+  learning_rate=0.05
+  length_penalty_weight=0.0
+  load_embedding=True
+  log_device_placement=False
+  loss_type=square_loss
+  max_gradient_norm=5.0
+  max_train=0
+  metrics=['bleu']
+  num_buckets=1
+  num_embeddings_partitions=0
+  num_gpus=1
+  num_layers=3
+  num_residual_layers=0
+  num_train_steps=909022
+  num_units=64
+  optimizer=sgd
+  out_dir=/app/user/qichao/ali/seq_model/seq2seq/nmt-1.2/models/20180305/1
+  pass_hidden_state=True
+  random_seed=None
+  residual=False
+  share_vocab=True
+  sos=<s>
+  source_reverse=False
+  src=idea
+  src_embed_size=64
+  src_max_len=5
+  src_max_len_infer=None
+  src_reverse=True
+  src_vocab_file=/app/user/qichao/ali/seq_model/seq2seq/nmt-1.2/models/20180305/1/vocab.idea
+  src_vocab_size=3059612
+  start_decay_step=0
+  steps_per_external_eval=None
+  steps_per_stats=1000
+  test_prefix=/app/user/qichao/ali/seq_model/seq2seq/nmt-1.2/data/20180305/test
+  tgt=idea
+  tgt_embed_size=64
+  tgt_max_len=5
+  tgt_max_len_infer=None
+  tgt_vocab_file=/app/user/qichao/ali/seq_model/seq2seq/nmt-1.2/models/20180305/1/vocab.idea
+  tgt_vocab_size=3059612
+  time_major=False
+  train_prefix=/app/user/qichao/ali/seq_model/seq2seq/nmt-1.2/data/20180305/train
+  unit_type=lstm
+  vocab_prefix=/app/user/qichao/ali/seq_model/seq2seq/nmt-1.2/models/20180305/vocab
+  with_inference=True
+  with_output_layer=True
+# creating train graph ...
+[None, None]
+  num_layers = 3, num_residual_layers=0
+  cell 0  LSTM, forget_bias=1  DropoutWrapper, dropout=0.2   DeviceWrapper, device=/gpu:0
+  cell 1  LSTM, forget_bias=1  DropoutWrapper, dropout=0.2   DeviceWrapper, device=/gpu:0
+  cell 2  LSTM, forget_bias=1  DropoutWrapper, dropout=0.2   DeviceWrapper, device=/gpu:0
+  cell 0  LSTM, forget_bias=1  DropoutWrapper, dropout=0.2   DeviceWrapper, device=/gpu:0
+  cell 1  LSTM, forget_bias=1  DropoutWrapper, dropout=0.2   DeviceWrapper, device=/gpu:0
+  cell 2  LSTM, forget_bias=1  DropoutWrapper, dropout=0.2   DeviceWrapper, device=/gpu:0
+  cell 0  LSTM, forget_bias=1  DropoutWrapper, dropout=0.2   DeviceWrapper, device=/gpu:0
+  cell 1  LSTM, forget_bias=1  DropoutWrapper, dropout=0.2   DeviceWrapper, device=/gpu:0
+  cell 2  LSTM, forget_bias=1  DropoutWrapper, dropout=0.2   DeviceWrapper, device=/gpu:0
+  start_decay_step=0, learning_rate=0.05, decay_steps 1000,decay_factor 0.98
+# Trainable variables
+  doc2vec_embedding:0, (3059612, 64), 
+  dynamic_seq2seq/encoder/rnn/multi_rnn_cell/cell_0/basic_lstm_cell/kernel:0, (128, 256), /device:GPU:0
+  dynamic_seq2seq/encoder/rnn/multi_rnn_cell/cell_0/basic_lstm_cell/bias:0, (256,), /device:GPU:0
+  dynamic_seq2seq/encoder/rnn/multi_rnn_cell/cell_1/basic_lstm_cell/kernel:0, (128, 256), /device:GPU:0
+  dynamic_seq2seq/encoder/rnn/multi_rnn_cell/cell_1/basic_lstm_cell/bias:0, (256,), /device:GPU:0
+  dynamic_seq2seq/encoder/rnn/multi_rnn_cell/cell_2/basic_lstm_cell/kernel:0, (128, 256), /device:GPU:0
+  dynamic_seq2seq/encoder/rnn/multi_rnn_cell/cell_2/basic_lstm_cell/bias:0, (256,), /device:GPU:0
+  dynamic_seq2seq/decoder/memory_layer/kernel:0, (64, 64), 
+  dynamic_seq2seq/decoder/attention/multi_rnn_cell/cell_0/basic_lstm_cell/kernel:0, (192, 256), /device:GPU:0
+  dynamic_seq2seq/decoder/attention/multi_rnn_cell/cell_0/basic_lstm_cell/bias:0, (256,), /device:GPU:0
+  dynamic_seq2seq/decoder/attention/multi_rnn_cell/cell_1/basic_lstm_cell/kernel:0, (128, 256), /device:GPU:0
+  dynamic_seq2seq/decoder/attention/multi_rnn_cell/cell_1/basic_lstm_cell/bias:0, (256,), /device:GPU:0
+  dynamic_seq2seq/decoder/attention/multi_rnn_cell/cell_2/basic_lstm_cell/kernel:0, (128, 256), /device:GPU:0
+  dynamic_seq2seq/decoder/attention/multi_rnn_cell/cell_2/basic_lstm_cell/bias:0, (256,), /device:GPU:0
+  dynamic_seq2seq/decoder/attention/bahdanau_attention/query_layer/kernel:0, (64, 64), /device:GPU:0
+  dynamic_seq2seq/decoder/attention/bahdanau_attention/attention_v:0, (64,), /device:GPU:0
+  dynamic_seq2seq/decoder/attention/attention_layer/kernel:0, (128, 64), /device:GPU:0
+  dynamic_seq2seq/rebuild_decoder/memory_layer/kernel:0, (64, 64), 
+  dynamic_seq2seq/rebuild_decoder/attention/multi_rnn_cell/cell_0/basic_lstm_cell/kernel:0, (192, 256), /device:GPU:0
+  dynamic_seq2seq/rebuild_decoder/attention/multi_rnn_cell/cell_0/basic_lstm_cell/bias:0, (256,), /device:GPU:0
+  dynamic_seq2seq/rebuild_decoder/attention/multi_rnn_cell/cell_1/basic_lstm_cell/kernel:0, (128, 256), /device:GPU:0
+  dynamic_seq2seq/rebuild_decoder/attention/multi_rnn_cell/cell_1/basic_lstm_cell/bias:0, (256,), /device:GPU:0
+  dynamic_seq2seq/rebuild_decoder/attention/multi_rnn_cell/cell_2/basic_lstm_cell/kernel:0, (128, 256), /device:GPU:0
+  dynamic_seq2seq/rebuild_decoder/attention/multi_rnn_cell/cell_2/basic_lstm_cell/bias:0, (256,), /device:GPU:0
+  dynamic_seq2seq/rebuild_decoder/attention/bahdanau_attention/query_layer/kernel:0, (64, 64), /device:GPU:0
+  dynamic_seq2seq/rebuild_decoder/attention/bahdanau_attention/attention_v:0, (64,), /device:GPU:0
+  dynamic_seq2seq/rebuild_decoder/attention/attention_layer/kernel:0, (128, 64), /device:GPU:0
+# creating eval graph ...
+[None, None]
+  num_layers = 3, num_residual_layers=0
+  cell 0  LSTM, forget_bias=1  DeviceWrapper, device=/gpu:0
+  cell 1  LSTM, forget_bias=1  DeviceWrapper, device=/gpu:0
+  cell 2  LSTM, forget_bias=1  DeviceWrapper, device=/gpu:0
+  cell 0  LSTM, forget_bias=1  DeviceWrapper, device=/gpu:0
+  cell 1  LSTM, forget_bias=1  DeviceWrapper, device=/gpu:0
+  cell 2  LSTM, forget_bias=1  DeviceWrapper, device=/gpu:0
+  cell 0  LSTM, forget_bias=1  DeviceWrapper, device=/gpu:0
+  cell 1  LSTM, forget_bias=1  DeviceWrapper, device=/gpu:0
+  cell 2  LSTM, forget_bias=1  DeviceWrapper, device=/gpu:0
+  start_decay_step=0, learning_rate=0.05, decay_steps 1000,decay_factor 0.98
+# Trainable variables
+  doc2vec_embedding:0, (3059612, 64), 
+  dynamic_seq2seq/encoder/rnn/multi_rnn_cell/cell_0/basic_lstm_cell/kernel:0, (128, 256), /device:GPU:0
+  dynamic_seq2seq/encoder/rnn/multi_rnn_cell/cell_0/basic_lstm_cell/bias:0, (256,), /device:GPU:0
+  dynamic_seq2seq/encoder/rnn/multi_rnn_cell/cell_1/basic_lstm_cell/kernel:0, (128, 256), /device:GPU:0
+  dynamic_seq2seq/encoder/rnn/multi_rnn_cell/cell_1/basic_lstm_cell/bias:0, (256,), /device:GPU:0
+  dynamic_seq2seq/encoder/rnn/multi_rnn_cell/cell_2/basic_lstm_cell/kernel:0, (128, 256), /device:GPU:0
+  dynamic_seq2seq/encoder/rnn/multi_rnn_cell/cell_2/basic_lstm_cell/bias:0, (256,), /device:GPU:0
+  dynamic_seq2seq/decoder/memory_layer/kernel:0, (64, 64), 
+  dynamic_seq2seq/decoder/attention/multi_rnn_cell/cell_0/basic_lstm_cell/kernel:0, (192, 256), /device:GPU:0
+  dynamic_seq2seq/decoder/attention/multi_rnn_cell/cell_0/basic_lstm_cell/bias:0, (256,), /device:GPU:0
+  dynamic_seq2seq/decoder/attention/multi_rnn_cell/cell_1/basic_lstm_cell/kernel:0, (128, 256), /device:GPU:0
+  dynamic_seq2seq/decoder/attention/multi_rnn_cell/cell_1/basic_lstm_cell/bias:0, (256,), /device:GPU:0
+  dynamic_seq2seq/decoder/attention/multi_rnn_cell/cell_2/basic_lstm_cell/kernel:0, (128, 256), /device:GPU:0
+  dynamic_seq2seq/decoder/attention/multi_rnn_cell/cell_2/basic_lstm_cell/bias:0, (256,), /device:GPU:0
+  dynamic_seq2seq/decoder/attention/bahdanau_attention/query_layer/kernel:0, (64, 64), /device:GPU:0
+  dynamic_seq2seq/decoder/attention/bahdanau_attention/attention_v:0, (64,), /device:GPU:0
+  dynamic_seq2seq/decoder/attention/attention_layer/kernel:0, (128, 64), /device:GPU:0
+  dynamic_seq2seq/rebuild_decoder/memory_layer/kernel:0, (64, 64), 
+  dynamic_seq2seq/rebuild_decoder/attention/multi_rnn_cell/cell_0/basic_lstm_cell/kernel:0, (192, 256), /device:GPU:0
+  dynamic_seq2seq/rebuild_decoder/attention/multi_rnn_cell/cell_0/basic_lstm_cell/bias:0, (256,), /device:GPU:0
+  dynamic_seq2seq/rebuild_decoder/attention/multi_rnn_cell/cell_1/basic_lstm_cell/kernel:0, (128, 256), /device:GPU:0
+  dynamic_seq2seq/rebuild_decoder/attention/multi_rnn_cell/cell_1/basic_lstm_cell/bias:0, (256,), /device:GPU:0
+  dynamic_seq2seq/rebuild_decoder/attention/multi_rnn_cell/cell_2/basic_lstm_cell/kernel:0, (128, 256), /device:GPU:0
+  dynamic_seq2seq/rebuild_decoder/attention/multi_rnn_cell/cell_2/basic_lstm_cell/bias:0, (256,), /device:GPU:0
+  dynamic_seq2seq/rebuild_decoder/attention/bahdanau_attention/query_layer/kernel:0, (64, 64), /device:GPU:0
+  dynamic_seq2seq/rebuild_decoder/attention/bahdanau_attention/attention_v:0, (64,), /device:GPU:0
+  dynamic_seq2seq/rebuild_decoder/attention/attention_layer/kernel:0, (128, 64), /device:GPU:0
+# creating infer graph ...
+[None, None]
+  num_layers = 3, num_residual_layers=0
+  cell 0  LSTM, forget_bias=1  DeviceWrapper, device=/gpu:0
+  cell 1  LSTM, forget_bias=1  DeviceWrapper, device=/gpu:0
+  cell 2  LSTM, forget_bias=1  DeviceWrapper, device=/gpu:0
+  cell 0  LSTM, forget_bias=1  DeviceWrapper, device=/gpu:0
+  cell 1  LSTM, forget_bias=1  DeviceWrapper, device=/gpu:0
+  cell 2  LSTM, forget_bias=1  DeviceWrapper, device=/gpu:0
+  cell 0  LSTM, forget_bias=1  DeviceWrapper, device=/gpu:0
+  cell 1  LSTM, forget_bias=1  DeviceWrapper, device=/gpu:0
+  cell 2  LSTM, forget_bias=1  DeviceWrapper, device=/gpu:0
+  start_decay_step=0, learning_rate=0.05, decay_steps 1000,decay_factor 0.98
+# Trainable variables
+  doc2vec_embedding:0, (3059612, 64), 
+  dynamic_seq2seq/encoder/rnn/multi_rnn_cell/cell_0/basic_lstm_cell/kernel:0, (128, 256), /device:GPU:0
+  dynamic_seq2seq/encoder/rnn/multi_rnn_cell/cell_0/basic_lstm_cell/bias:0, (256,), /device:GPU:0
+  dynamic_seq2seq/encoder/rnn/multi_rnn_cell/cell_1/basic_lstm_cell/kernel:0, (128, 256), /device:GPU:0
+  dynamic_seq2seq/encoder/rnn/multi_rnn_cell/cell_1/basic_lstm_cell/bias:0, (256,), /device:GPU:0
+  dynamic_seq2seq/encoder/rnn/multi_rnn_cell/cell_2/basic_lstm_cell/kernel:0, (128, 256), /device:GPU:0
+  dynamic_seq2seq/encoder/rnn/multi_rnn_cell/cell_2/basic_lstm_cell/bias:0, (256,), /device:GPU:0
+  dynamic_seq2seq/decoder/memory_layer/kernel:0, (64, 64), 
+  dynamic_seq2seq/decoder/attention/multi_rnn_cell/cell_0/basic_lstm_cell/kernel:0, (192, 256), /device:GPU:0
+  dynamic_seq2seq/decoder/attention/multi_rnn_cell/cell_0/basic_lstm_cell/bias:0, (256,), /device:GPU:0
+  dynamic_seq2seq/decoder/attention/multi_rnn_cell/cell_1/basic_lstm_cell/kernel:0, (128, 256), /device:GPU:0
+  dynamic_seq2seq/decoder/attention/multi_rnn_cell/cell_1/basic_lstm_cell/bias:0, (256,), /device:GPU:0
+  dynamic_seq2seq/decoder/attention/multi_rnn_cell/cell_2/basic_lstm_cell/kernel:0, (128, 256), /device:GPU:0
+  dynamic_seq2seq/decoder/attention/multi_rnn_cell/cell_2/basic_lstm_cell/bias:0, (256,), /device:GPU:0
+  dynamic_seq2seq/decoder/attention/bahdanau_attention/query_layer/kernel:0, (64, 64), /device:GPU:0
+  dynamic_seq2seq/decoder/attention/bahdanau_attention/attention_v:0, (64,), /device:GPU:0
+  dynamic_seq2seq/decoder/attention/attention_layer/kernel:0, (128, 64), /device:GPU:0
+  dynamic_seq2seq/decoder/output_projection/kernel:0, (64, 3059612), 
+  dynamic_seq2seq/rebuild_decoder/memory_layer/kernel:0, (64, 64), 
+  dynamic_seq2seq/rebuild_decoder/attention/multi_rnn_cell/cell_0/basic_lstm_cell/kernel:0, (192, 256), /device:GPU:0
+  dynamic_seq2seq/rebuild_decoder/attention/multi_rnn_cell/cell_0/basic_lstm_cell/bias:0, (256,), /device:GPU:0
+  dynamic_seq2seq/rebuild_decoder/attention/multi_rnn_cell/cell_1/basic_lstm_cell/kernel:0, (128, 256), /device:GPU:0
+  dynamic_seq2seq/rebuild_decoder/attention/multi_rnn_cell/cell_1/basic_lstm_cell/bias:0, (256,), /device:GPU:0
+  dynamic_seq2seq/rebuild_decoder/attention/multi_rnn_cell/cell_2/basic_lstm_cell/kernel:0, (128, 256), /device:GPU:0
+  dynamic_seq2seq/rebuild_decoder/attention/multi_rnn_cell/cell_2/basic_lstm_cell/bias:0, (256,), /device:GPU:0
+  dynamic_seq2seq/rebuild_decoder/attention/bahdanau_attention/query_layer/kernel:0, (64, 64), /device:GPU:0
+  dynamic_seq2seq/rebuild_decoder/attention/bahdanau_attention/attention_v:0, (64,), /device:GPU:0
+  dynamic_seq2seq/rebuild_decoder/attention/attention_layer/kernel:0, (128, 64), /device:GPU:0
+# log_file=/app/user/qichao/ali/seq_model/seq2seq/nmt-1.2/models/20180305/1/log_1520344315
+  created train model with fresh parameters, time 9.18s
+# Start step 0, lr 0.05, Tue Mar  6 21:52:09 2018
+# Init train iterator, skipping 0 elements
+  global step 1000 lr 0.049 step-time 0.03s wps 20.01K step_loss 0.004907 ppl 1.00 bleu 0.00
+  global step 2000 lr 0.04802 step-time 0.03s wps 21.15K step_loss 0.005322 ppl 1.00 bleu 0.00
+  global step 3000 lr 0.0470596 step-time 0.03s wps 21.47K step_loss 0.006195 ppl 1.00 bleu 0.00
+  global step 4000 lr 0.0461184 step-time 0.03s wps 21.38K step_loss 0.003975 ppl 1.00 bleu 0.00
+  global step 5000 lr 0.045196 step-time 0.03s wps 21.56K step_loss 0.005069 ppl 1.00 bleu 0.00
+  global step 6000 lr 0.0442921 step-time 0.03s wps 21.60K step_loss 0.003967 ppl 1.00 bleu 0.00
+  global step 7000 lr 0.0434063 step-time 0.03s wps 21.65K step_loss 0.004347 ppl 1.00 bleu 0.00
+  global step 8000 lr 0.0425382 step-time 0.03s wps 21.38K step_loss 0.003906 ppl 1.00 bleu 0.00
+  global step 9000 lr 0.0416874 step-time 0.03s wps 21.70K step_loss 0.003507 ppl 1.00 bleu 0.00
+  global step 10000 lr 0.0408536 step-time 0.03s wps 21.50K step_loss 0.003712 ppl 1.00 bleu 0.00
+# Save eval, global step 10000
+  created eval model with fresh parameters, time 8.85s
+eval_step 0 compute_perplexity
+test  eval loss: 0.005507, time 2674s, Tue Mar  6 22:42:18 2018.
+  global step 11000 lr 0.0400366 step-time 0.03s wps 21.38K step_loss 0.004666 ppl 1.00 bleu 0.00
+  global step 12000 lr 0.0392358 step-time 0.03s wps 21.65K step_loss 0.004547 ppl 1.00 bleu 0.00
+  global step 13000 lr 0.0384511 step-time 0.03s wps 21.43K step_loss 0.004298 ppl 1.00 bleu 0.00
+  global step 14000 lr 0.0376821 step-time 0.03s wps 21.54K step_loss 0.003626 ppl 1.00 bleu 0.00
+  global step 15000 lr 0.0369285 step-time 0.03s wps 21.58K step_loss 0.004547 ppl 1.00 bleu 0.00
+  global step 16000 lr 0.0361899 step-time 0.03s wps 21.64K step_loss 0.002857 ppl 1.00 bleu 0.00
+  global step 17000 lr 0.0354661 step-time 0.03s wps 21.57K step_loss 0.005486 ppl 1.00 bleu 0.00
+  global step 18000 lr 0.0347568 step-time 0.03s wps 21.45K step_loss 0.004691 ppl 1.00 bleu 0.00
+  global step 19000 lr 0.0340616 step-time 0.03s wps 21.49K step_loss 0.005098 ppl 1.00 bleu 0.00
+  global step 20000 lr 0.0333804 step-time 0.03s wps 21.45K step_loss 0.003103 ppl 1.00 bleu 0.00
+# Save eval, global step 20000
+  loaded eval model parameters from /app/user/qichao/ali/seq_model/seq2seq/nmt-1.2/models/20180305/1/translate.ckpt-10000, time 0.96s
+eval_step 10000 compute_perplexity
+test  eval loss: 0.004169, time 2671s, Tue Mar  6 23:32:17 2018.
+  global step 21000 lr 0.0327128 step-time 0.03s wps 21.41K step_loss 0.005445 ppl 1.00 bleu 0.00
+  global step 22000 lr 0.0320585 step-time 0.03s wps 21.35K step_loss 0.004277 ppl 1.00 bleu 0.00
+  global step 23000 lr 0.0314174 step-time 0.03s wps 21.53K step_loss 0.003605 ppl 1.00 bleu 0.00
+  global step 24000 lr 0.030789 step-time 0.03s wps 21.35K step_loss 0.004800 ppl 1.00 bleu 0.00
+  global step 25000 lr 0.0301733 step-time 0.03s wps 21.49K step_loss 0.003930 ppl 1.00 bleu 0.00
+  global step 26000 lr 0.0295698 step-time 0.03s wps 21.52K step_loss 0.002827 ppl 1.00 bleu 0.00
+  global step 27000 lr 0.0289784 step-time 0.03s wps 21.58K step_loss 0.004087 ppl 1.00 bleu 0.00
+  global step 28000 lr 0.0283988 step-time 0.03s wps 21.57K step_loss 0.004127 ppl 1.00 bleu 0.00
+  global step 29000 lr 0.0278308 step-time 0.03s wps 21.52K step_loss 0.003832 ppl 1.00 bleu 0.00
+  global step 30000 lr 0.0272742 step-time 0.03s wps 21.70K step_loss 0.003500 ppl 1.00 bleu 0.00
+# Save eval, global step 30000
+  loaded eval model parameters from /app/user/qichao/ali/seq_model/seq2seq/nmt-1.2/models/20180305/1/translate.ckpt-20000, time 0.95s
+eval_step 20000 compute_perplexity
+test  eval loss: 0.003970, time 2670s, Wed Mar  7 00:22:15 2018.
+  global step 31000 lr 0.0267287 step-time 0.03s wps 21.66K step_loss 0.004056 ppl 1.00 bleu 0.00
+  global step 32000 lr 0.0261942 step-time 0.03s wps 21.62K step_loss 0.004280 ppl 1.00 bleu 0.00
+  global step 33000 lr 0.0256703 step-time 0.03s wps 21.68K step_loss 0.004146 ppl 1.00 bleu 0.00
+  global step 34000 lr 0.0251569 step-time 0.03s wps 21.59K step_loss 0.003957 ppl 1.00 bleu 0.00
+  global step 35000 lr 0.0246537 step-time 0.03s wps 21.59K step_loss 0.004134 ppl 1.00 bleu 0.00
+  global step 36000 lr 0.0241607 step-time 0.03s wps 21.57K step_loss 0.003415 ppl 1.00 bleu 0.00
+  global step 37000 lr 0.0236775 step-time 0.03s wps 21.65K step_loss 0.003940 ppl 1.00 bleu 0.00
+  global step 38000 lr 0.0232039 step-time 0.03s wps 21.58K step_loss 0.003051 ppl 1.00 bleu 0.00
+  global step 39000 lr 0.0227398 step-time 0.03s wps 21.40K step_loss 0.003808 ppl 1.00 bleu 0.00
+  global step 40000 lr 0.022285 step-time 0.03s wps 21.41K step_loss 0.003394 ppl 1.00 bleu 0.00
+# Save eval, global step 40000
+  loaded eval model parameters from /app/user/qichao/ali/seq_model/seq2seq/nmt-1.2/models/20180305/1/translate.ckpt-30000, time 0.96s
+eval_step 30000 compute_perplexity
+test  eval loss: 0.003848, time 2671s, Wed Mar  7 01:12:14 2018.
+  global step 41000 lr 0.0218393 step-time 0.03s wps 21.52K step_loss 0.004137 ppl 1.00 bleu 0.00
+  global step 42000 lr 0.0214026 step-time 0.03s wps 21.43K step_loss 0.003491 ppl 1.00 bleu 0.00
+  global step 43000 lr 0.0209745 step-time 0.03s wps 21.63K step_loss 0.003968 ppl 1.00 bleu 0.00
+  global step 44000 lr 0.020555 step-time 0.03s wps 21.57K step_loss 0.003248 ppl 1.00 bleu 0.00
+  global step 45000 lr 0.0201439 step-time 0.03s wps 21.59K step_loss 0.003314 ppl 1.00 bleu 0.00
+  global step 46000 lr 0.019741 step-time 0.03s wps 21.68K step_loss 0.002965 ppl 1.00 bleu 0.00
+  global step 47000 lr 0.0193462 step-time 0.03s wps 21.47K step_loss 0.003660 ppl 1.00 bleu 0.00
+  global step 48000 lr 0.0189593 step-time 0.03s wps 21.46K step_loss 0.004163 ppl 1.00 bleu 0.00
+  global step 49000 lr 0.0185801 step-time 0.03s wps 21.60K step_loss 0.003829 ppl 1.00 bleu 0.00
+  global step 50000 lr 0.0182085 step-time 0.03s wps 21.53K step_loss 0.003301 ppl 1.00 bleu 0.00
+# Save eval, global step 50000
+  loaded eval model parameters from /app/user/qichao/ali/seq_model/seq2seq/nmt-1.2/models/20180305/1/translate.ckpt-40000, time 0.93s
+eval_step 40000 compute_perplexity
+test  eval loss: 0.003761, time 2669s, Wed Mar  7 02:02:10 2018.
+  global step 51000 lr 0.0178443 step-time 0.03s wps 21.53K step_loss 0.004678 ppl 1.00 bleu 0.00
+  global step 52000 lr 0.0174874 step-time 0.03s wps 21.49K step_loss 0.003597 ppl 1.00 bleu 0.00
+  global step 53000 lr 0.0171377 step-time 0.03s wps 21.57K step_loss 0.003146 ppl 1.00 bleu 0.00
+  global step 54000 lr 0.0167949 step-time 0.03s wps 21.57K step_loss 0.003662 ppl 1.00 bleu 0.00
+  global step 55000 lr 0.016459 step-time 0.03s wps 21.51K step_loss 0.004839 ppl 1.00 bleu 0.00
+  global step 56000 lr 0.0161299 step-time 0.03s wps 21.59K step_loss 0.003303 ppl 1.00 bleu 0.00
+  global step 57000 lr 0.0158073 step-time 0.03s wps 21.64K step_loss 0.003519 ppl 1.00 bleu 0.00
+  global step 58000 lr 0.0154911 step-time 0.03s wps 21.37K step_loss 0.003531 ppl 1.00 bleu 0.00
+  global step 59000 lr 0.0151813 step-time 0.03s wps 21.62K step_loss 0.003935 ppl 1.00 bleu 0.00
+  global step 60000 lr 0.0148777 step-time 0.03s wps 21.38K step_loss 0.003759 ppl 1.00 bleu 0.00
+# Save eval, global step 60000
+  loaded eval model parameters from /app/user/qichao/ali/seq_model/seq2seq/nmt-1.2/models/20180305/1/translate.ckpt-50000, time 0.95s
+eval_step 50000 compute_perplexity
+test  eval loss: 0.003694, time 2672s, Wed Mar  7 02:52:16 2018.
+  global step 61000 lr 0.0145801 step-time 0.03s wps 21.52K step_loss 0.003637 ppl 1.00 bleu 0.00
+  global step 62000 lr 0.0142885 step-time 0.03s wps 21.58K step_loss 0.004263 ppl 1.00 bleu 0.00
+  global step 63000 lr 0.0140027 step-time 0.03s wps 21.58K step_loss 0.004729 ppl 1.00 bleu 0.00
+  global step 64000 lr 0.0137227 step-time 0.03s wps 21.68K step_loss 0.004130 ppl 1.00 bleu 0.00
+  global step 65000 lr 0.0134482 step-time 0.03s wps 21.46K step_loss 0.003966 ppl 1.00 bleu 0.00
+  global step 66000 lr 0.0131793 step-time 0.03s wps 21.65K step_loss 0.003534 ppl 1.00 bleu 0.00
+  global step 67000 lr 0.0129157 step-time 0.03s wps 21.64K step_loss 0.003412 ppl 1.00 bleu 0.00
+  global step 68000 lr 0.0126574 step-time 0.03s wps 21.68K step_loss 0.003624 ppl 1.00 bleu 0.00
+  global step 69000 lr 0.0124042 step-time 0.03s wps 21.55K step_loss 0.003427 ppl 1.00 bleu 0.00
+  global step 70000 lr 0.0121561 step-time 0.03s wps 21.61K step_loss 0.003799 ppl 1.00 bleu 0.00
+# Save eval, global step 70000
+  loaded eval model parameters from /app/user/qichao/ali/seq_model/seq2seq/nmt-1.2/models/20180305/1/translate.ckpt-60000, time 0.96s
+eval_step 60000 compute_perplexity
+test  eval loss: 0.003644, time 2674s, Wed Mar  7 03:42:18 2018.
+  global step 71000 lr 0.011913 step-time 0.03s wps 21.52K step_loss 0.003096 ppl 1.00 bleu 0.00
+  global step 72000 lr 0.0116748 step-time 0.03s wps 21.64K step_loss 0.002890 ppl 1.00 bleu 0.00
+  global step 73000 lr 0.0114413 step-time 0.03s wps 21.57K step_loss 0.003570 ppl 1.00 bleu 0.00
+  global step 74000 lr 0.0112124 step-time 0.03s wps 21.61K step_loss 0.004217 ppl 1.00 bleu 0.00
+  global step 75000 lr 0.0109882 step-time 0.03s wps 21.61K step_loss 0.003659 ppl 1.00 bleu 0.00
+  global step 76000 lr 0.0107684 step-time 0.03s wps 21.60K step_loss 0.004024 ppl 1.00 bleu 0.00
+  global step 77000 lr 0.0105531 step-time 0.03s wps 21.53K step_loss 0.003586 ppl 1.00 bleu 0.00
+  global step 78000 lr 0.010342 step-time 0.03s wps 21.58K step_loss 0.003456 ppl 1.00 bleu 0.00
+  global step 79000 lr 0.0101352 step-time 0.03s wps 21.47K step_loss 0.004209 ppl 1.00 bleu 0.00
+  global step 80000 lr 0.00993246 step-time 0.03s wps 21.59K step_loss 0.003397 ppl 1.00 bleu 0.00
+# Save eval, global step 80000
+  loaded eval model parameters from /app/user/qichao/ali/seq_model/seq2seq/nmt-1.2/models/20180305/1/translate.ckpt-70000, time 0.94s
+eval_step 70000 compute_perplexity
+test  eval loss: 0.003603, time 2669s, Wed Mar  7 04:32:15 2018.
+  global step 81000 lr 0.00973381 step-time 0.03s wps 21.52K step_loss 0.003698 ppl 1.00 bleu 0.00
+  global step 82000 lr 0.00953913 step-time 0.03s wps 21.68K step_loss 0.003173 ppl 1.00 bleu 0.00
+  global step 83000 lr 0.00934835 step-time 0.03s wps 21.71K step_loss 0.003809 ppl 1.00 bleu 0.00
+  global step 84000 lr 0.00916138 step-time 0.03s wps 21.47K step_loss 0.003228 ppl 1.00 bleu 0.00
+  global step 85000 lr 0.00897816 step-time 0.03s wps 21.63K step_loss 0.003409 ppl 1.00 bleu 0.00
+  global step 86000 lr 0.00879859 step-time 0.03s wps 21.67K step_loss 0.003736 ppl 1.00 bleu 0.00
+  global step 87000 lr 0.00862262 step-time 0.03s wps 21.46K step_loss 0.002728 ppl 1.00 bleu 0.00
+  global step 88000 lr 0.00845017 step-time 0.03s wps 21.59K step_loss 0.003198 ppl 1.00 bleu 0.00
+  global step 89000 lr 0.00828117 step-time 0.03s wps 21.52K step_loss 0.003371 ppl 1.00 bleu 0.00
+  global step 90000 lr 0.00811554 step-time 0.03s wps 21.50K step_loss 0.003610 ppl 1.00 bleu 0.00
+# Save eval, global step 90000
+  loaded eval model parameters from /app/user/qichao/ali/seq_model/seq2seq/nmt-1.2/models/20180305/1/translate.ckpt-80000, time 0.93s
+eval_step 80000 compute_perplexity
+test  eval loss: 0.003572, time 2671s, Wed Mar  7 05:22:14 2018.
+  global step 91000 lr 0.00795323 step-time 0.03s wps 21.43K step_loss 0.002833 ppl 1.00 bleu 0.00
+  global step 92000 lr 0.00779417 step-time 0.03s wps 21.68K step_loss 0.003390 ppl 1.00 bleu 0.00
+  global step 93000 lr 0.00763828 step-time 0.03s wps 21.58K step_loss 0.004277 ppl 1.00 bleu 0.00
+  global step 94000 lr 0.00748552 step-time 0.03s wps 21.45K step_loss 0.004398 ppl 1.00 bleu 0.00
+  global step 95000 lr 0.00733581 step-time 0.03s wps 21.58K step_loss 0.003438 ppl 1.00 bleu 0.00
+  global step 96000 lr 0.00718909 step-time 0.03s wps 21.59K step_loss 0.003751 ppl 1.00 bleu 0.00
+  global step 97000 lr 0.00704531 step-time 0.03s wps 21.52K step_loss 0.003662 ppl 1.00 bleu 0.00
+  global step 98000 lr 0.0069044 step-time 0.03s wps 21.49K step_loss 0.003097 ppl 1.00 bleu 0.00
+  global step 99000 lr 0.00676632 step-time 0.03s wps 21.57K step_loss 0.003711 ppl 1.00 bleu 0.00
+  global step 100000 lr 0.00663099 step-time 0.03s wps 21.56K step_loss 0.003320 ppl 1.00 bleu 0.00
+# Save eval, global step 100000
+  loaded eval model parameters from /app/user/qichao/ali/seq_model/seq2seq/nmt-1.2/models/20180305/1/translate.ckpt-90000, time 0.93s
+eval_step 90000 compute_perplexity
+test  eval loss: 0.003547, time 2669s, Wed Mar  7 06:12:11 2018.
+  global step 101000 lr 0.00649837 step-time 0.03s wps 21.45K step_loss 0.003787 ppl 1.00 bleu 0.00
+  global step 102000 lr 0.0063684 step-time 0.03s wps 21.45K step_loss 0.003332 ppl 1.00 bleu 0.00
+  global step 103000 lr 0.00624104 step-time 0.03s wps 21.54K step_loss 0.003557 ppl 1.00 bleu 0.00
+  global step 104000 lr 0.00611622 step-time 0.03s wps 21.52K step_loss 0.004033 ppl 1.00 bleu 0.00
+  global step 105000 lr 0.00599389 step-time 0.03s wps 21.60K step_loss 0.003149 ppl 1.00 bleu 0.00
+  global step 106000 lr 0.00587401 step-time 0.03s wps 21.61K step_loss 0.004117 ppl 1.00 bleu 0.00
+  global step 107000 lr 0.00575653 step-time 0.03s wps 21.48K step_loss 0.002890 ppl 1.00 bleu 0.00
+  global step 108000 lr 0.0056414 step-time 0.03s wps 21.47K step_loss 0.004170 ppl 1.00 bleu 0.00
+  global step 109000 lr 0.00552857 step-time 0.03s wps 21.63K step_loss 0.002928 ppl 1.00 bleu 0.00
+  global step 110000 lr 0.005418 step-time 0.03s wps 21.53K step_loss 0.003255 ppl 1.00 bleu 0.00
+# Save eval, global step 110000
+  loaded eval model parameters from /app/user/qichao/ali/seq_model/seq2seq/nmt-1.2/models/20180305/1/translate.ckpt-100000, time 0.95s
+eval_step 100000 compute_perplexity
+test  eval loss: 0.003527, time 2671s, Wed Mar  7 07:02:16 2018.
+  global step 111000 lr 0.00530964 step-time 0.03s wps 21.28K step_loss 0.002912 ppl 1.00 bleu 0.00
+  global step 112000 lr 0.00520345 step-time 0.03s wps 21.50K step_loss 0.002924 ppl 1.00 bleu 0.00
+  global step 113000 lr 0.00509938 step-time 0.03s wps 21.51K step_loss 0.002674 ppl 1.00 bleu 0.00
+  global step 114000 lr 0.00499739 step-time 0.03s wps 21.51K step_loss 0.003181 ppl 1.00 bleu 0.00
+  global step 115000 lr 0.00489745 step-time 0.03s wps 21.61K step_loss 0.003462 ppl 1.00 bleu 0.00
+  global step 116000 lr 0.0047995 step-time 0.03s wps 21.53K step_loss 0.002760 ppl 1.00 bleu 0.00
+  global step 117000 lr 0.00470351 step-time 0.03s wps 21.52K step_loss 0.003416 ppl 1.00 bleu 0.00
+  global step 118000 lr 0.00460944 step-time 0.03s wps 21.58K step_loss 0.003399 ppl 1.00 bleu 0.00
+  global step 119000 lr 0.00451725 step-time 0.03s wps 21.64K step_loss 0.003204 ppl 1.00 bleu 0.00
+  global step 120000 lr 0.0044269 step-time 0.03s wps 21.55K step_loss 0.003457 ppl 1.00 bleu 0.00
+# Save eval, global step 120000
+  loaded eval model parameters from /app/user/qichao/ali/seq_model/seq2seq/nmt-1.2/models/20180305/1/translate.ckpt-110000, time 0.96s
+eval_step 110000 compute_perplexity
+test  eval loss: 0.003511, time 2669s, Wed Mar  7 07:52:13 2018.
+  global step 121000 lr 0.00433837 step-time 0.03s wps 21.61K step_loss 0.003790 ppl 1.00 bleu 0.00
+  global step 122000 lr 0.0042516 step-time 0.03s wps 21.59K step_loss 0.003123 ppl 1.00 bleu 0.00
+  global step 123000 lr 0.00416657 step-time 0.03s wps 21.51K step_loss 0.003048 ppl 1.00 bleu 0.00
+  global step 124000 lr 0.00408324 step-time 0.03s wps 21.52K step_loss 0.004071 ppl 1.00 bleu 0.00
+  global step 125000 lr 0.00400157 step-time 0.03s wps 21.53K step_loss 0.003491 ppl 1.00 bleu 0.00
+  global step 126000 lr 0.00392154 step-time 0.03s wps 21.53K step_loss 0.003366 ppl 1.00 bleu 0.00
+  global step 127000 lr 0.00384311 step-time 0.03s wps 21.57K step_loss 0.003323 ppl 1.00 bleu 0.00
+  global step 128000 lr 0.00376625 step-time 0.03s wps 21.56K step_loss 0.003526 ppl 1.00 bleu 0.00
+  global step 129000 lr 0.00369092 step-time 0.03s wps 21.54K step_loss 0.003244 ppl 1.00 bleu 0.00
+  global step 130000 lr 0.0036171 step-time 0.03s wps 21.58K step_loss 0.003305 ppl 1.00 bleu 0.00
+# Save eval, global step 130000
+  loaded eval model parameters from /app/user/qichao/ali/seq_model/seq2seq/nmt-1.2/models/20180305/1/translate.ckpt-120000, time 0.94s
+eval_step 120000 compute_perplexity
+test  eval loss: 0.003498, time 2668s, Wed Mar  7 08:42:09 2018.
+  global step 131000 lr 0.00354476 step-time 0.03s wps 21.46K step_loss 0.003082 ppl 1.00 bleu 0.00
+  global step 132000 lr 0.00347387 step-time 0.03s wps 21.54K step_loss 0.004107 ppl 1.00 bleu 0.00
+  global step 133000 lr 0.00340439 step-time 0.03s wps 21.76K step_loss 0.003086 ppl 1.00 bleu 0.00
+  global step 134000 lr 0.0033363 step-time 0.03s wps 21.71K step_loss 0.002715 ppl 1.00 bleu 0.00
+  global step 135000 lr 0.00326958 step-time 0.03s wps 21.63K step_loss 0.003427 ppl 1.00 bleu 0.00
+  global step 136000 lr 0.00320418 step-time 0.03s wps 21.61K step_loss 0.003704 ppl 1.00 bleu 0.00
+  global step 137000 lr 0.0031401 step-time 0.03s wps 21.66K step_loss 0.003654 ppl 1.00 bleu 0.00
+  global step 138000 lr 0.0030773 step-time 0.03s wps 21.59K step_loss 0.003382 ppl 1.00 bleu 0.00
+  global step 139000 lr 0.00301575 step-time 0.03s wps 21.75K step_loss 0.004004 ppl 1.00 bleu 0.00
+  global step 140000 lr 0.00295544 step-time 0.03s wps 21.52K step_loss 0.002578 ppl 1.00 bleu 0.00
+# Save eval, global step 140000
+  loaded eval model parameters from /app/user/qichao/ali/seq_model/seq2seq/nmt-1.2/models/20180305/1/translate.ckpt-130000, time 0.94s
+eval_step 130000 compute_perplexity
+test  eval loss: 0.003487, time 2668s, Wed Mar  7 09:32:05 2018.
+  global step 141000 lr 0.00289633 step-time 0.03s wps 21.55K step_loss 0.002715 ppl 1.00 bleu 0.00
+  global step 142000 lr 0.0028384 step-time 0.03s wps 21.54K step_loss 0.003929 ppl 1.00 bleu 0.00
+  global step 143000 lr 0.00278163 step-time 0.03s wps 21.66K step_loss 0.003309 ppl 1.00 bleu 0.00
+  global step 144000 lr 0.002726 step-time 0.03s wps 21.58K step_loss 0.004336 ppl 1.00 bleu 0.00
+  global step 145000 lr 0.00267148 step-time 0.03s wps 21.60K step_loss 0.003634 ppl 1.00 bleu 0.00
+  global step 146000 lr 0.00261805 step-time 0.03s wps 21.47K step_loss 0.003134 ppl 1.00 bleu 0.00
+  global step 147000 lr 0.00256569 step-time 0.03s wps 21.61K step_loss 0.003907 ppl 1.00 bleu 0.00
+  global step 148000 lr 0.00251438 step-time 0.03s wps 21.65K step_loss 0.003305 ppl 1.00 bleu 0.00
+  global step 149000 lr 0.00246409 step-time 0.03s wps 21.72K step_loss 0.003107 ppl 1.00 bleu 0.00
+  global step 150000 lr 0.00241481 step-time 0.03s wps 21.75K step_loss 0.003154 ppl 1.00 bleu 0.00
+# Save eval, global step 150000
+  loaded eval model parameters from /app/user/qichao/ali/seq_model/seq2seq/nmt-1.2/models/20180305/1/translate.ckpt-140000, time 0.95s
+eval_step 140000 compute_perplexity
+test  eval loss: 0.003479, time 2669s, Wed Mar  7 10:22:01 2018.
+  global step 151000 lr 0.00236651 step-time 0.03s wps 21.59K step_loss 0.003807 ppl 1.00 bleu 0.00
+  global step 152000 lr 0.00231918 step-time 0.03s wps 21.65K step_loss 0.003373 ppl 1.00 bleu 0.00
+  global step 153000 lr 0.0022728 step-time 0.03s wps 21.65K step_loss 0.003584 ppl 1.00 bleu 0.00
+  global step 154000 lr 0.00222734 step-time 0.03s wps 21.59K step_loss 0.003892 ppl 1.00 bleu 0.00
+  global step 155000 lr 0.0021828 step-time 0.03s wps 21.58K step_loss 0.003281 ppl 1.00 bleu 0.00
+  global step 156000 lr 0.00213914 step-time 0.03s wps 21.54K step_loss 0.003898 ppl 1.00 bleu 0.00
+  global step 157000 lr 0.00209636 step-time 0.03s wps 21.56K step_loss 0.003457 ppl 1.00 bleu 0.00
+  global step 158000 lr 0.00205443 step-time 0.03s wps 21.80K step_loss 0.003152 ppl 1.00 bleu 0.00
+  global step 159000 lr 0.00201334 step-time 0.03s wps 21.66K step_loss 0.003473 ppl 1.00 bleu 0.00
+  global step 160000 lr 0.00197307 step-time 0.03s wps 21.65K step_loss 0.003988 ppl 1.00 bleu 0.00
+# Save eval, global step 160000
+  loaded eval model parameters from /app/user/qichao/ali/seq_model/seq2seq/nmt-1.2/models/20180305/1/translate.ckpt-150000, time 0.93s
+eval_step 150000 compute_perplexity
+test  eval loss: 0.003472, time 2667s, Wed Mar  7 11:12:03 2018.
+  global step 161000 lr 0.00193361 step-time 0.03s wps 21.52K step_loss 0.003480 ppl 1.00 bleu 0.00
+  global step 162000 lr 0.00189494 step-time 0.03s wps 21.47K step_loss 0.003809 ppl 1.00 bleu 0.00
+  global step 163000 lr 0.00185704 step-time 0.03s wps 21.43K step_loss 0.003090 ppl 1.00 bleu 0.00
+  global step 164000 lr 0.0018199 step-time 0.03s wps 21.53K step_loss 0.004478 ppl 1.00 bleu 0.00
+  global step 165000 lr 0.0017835 step-time 0.03s wps 21.62K step_loss 0.002815 ppl 1.00 bleu 0.00
+  global step 166000 lr 0.00174783 step-time 0.03s wps 21.60K step_loss 0.003510 ppl 1.00 bleu 0.00
+  global step 167000 lr 0.00171288 step-time 0.03s wps 21.68K step_loss 0.002897 ppl 1.00 bleu 0.00
+  global step 168000 lr 0.00167862 step-time 0.03s wps 21.52K step_loss 0.002905 ppl 1.00 bleu 0.00
+  global step 169000 lr 0.00164505 step-time 0.03s wps 21.50K step_loss 0.003810 ppl 1.00 bleu 0.00
+  global step 170000 lr 0.00161215 step-time 0.03s wps 21.49K step_loss 0.003284 ppl 1.00 bleu 0.00
+# Save eval, global step 170000
+  loaded eval model parameters from /app/user/qichao/ali/seq_model/seq2seq/nmt-1.2/models/20180305/1/translate.ckpt-160000, time 0.97s
+eval_step 160000 compute_perplexity
+test  eval loss: 0.003466, time 2669s, Wed Mar  7 12:01:59 2018.
+  global step 171000 lr 0.0015799 step-time 0.03s wps 21.62K step_loss 0.003228 ppl 1.00 bleu 0.00
+  global step 172000 lr 0.0015483 step-time 0.03s wps 21.68K step_loss 0.003223 ppl 1.00 bleu 0.00
+  global step 173000 lr 0.00151734 step-time 0.03s wps 21.55K step_loss 0.003546 ppl 1.00 bleu 0.00
+  global step 174000 lr 0.00148699 step-time 0.03s wps 21.58K step_loss 0.003492 ppl 1.00 bleu 0.00
+  global step 175000 lr 0.00145725 step-time 0.03s wps 21.62K step_loss 0.003878 ppl 1.00 bleu 0.00
+  global step 176000 lr 0.00142811 step-time 0.03s wps 21.48K step_loss 0.002436 ppl 1.00 bleu 0.00
+  global step 177000 lr 0.00139955 step-time 0.03s wps 21.53K step_loss 0.004218 ppl 1.00 bleu 0.00
+  global step 178000 lr 0.00137155 step-time 0.03s wps 21.46K step_loss 0.003013 ppl 1.00 bleu 0.00
+  global step 179000 lr 0.00134412 step-time 0.03s wps 21.56K step_loss 0.003257 ppl 1.00 bleu 0.00
+  global step 180000 lr 0.00131724 step-time 0.03s wps 21.49K step_loss 0.002818 ppl 1.00 bleu 0.00
+# Save eval, global step 180000
+  loaded eval model parameters from /app/user/qichao/ali/seq_model/seq2seq/nmt-1.2/models/20180305/1/translate.ckpt-170000, time 0.94s
+eval_step 170000 compute_perplexity
+test  eval loss: 0.003462, time 2669s, Wed Mar  7 12:51:55 2018.
+  global step 181000 lr 0.0012909 step-time 0.03s wps 21.53K step_loss 0.003391 ppl 1.00 bleu 0.00
+  global step 182000 lr 0.00126508 step-time 0.03s wps 21.79K step_loss 0.004057 ppl 1.00 bleu 0.00
+  global step 183000 lr 0.00123978 step-time 0.03s wps 21.82K step_loss 0.002791 ppl 1.00 bleu 0.00
+  global step 184000 lr 0.00121498 step-time 0.03s wps 21.58K step_loss 0.003781 ppl 1.00 bleu 0.00
+  global step 185000 lr 0.00119068 step-time 0.03s wps 21.68K step_loss 0.003279 ppl 1.00 bleu 0.00
+  global step 186000 lr 0.00116687 step-time 0.03s wps 21.57K step_loss 0.003185 ppl 1.00 bleu 0.00
+  global step 187000 lr 0.00114353 step-time 0.03s wps 21.65K step_loss 0.003954 ppl 1.00 bleu 0.00
+  global step 188000 lr 0.00112066 step-time 0.03s wps 21.61K step_loss 0.002555 ppl 1.00 bleu 0.00
+  global step 189000 lr 0.00109825 step-time 0.03s wps 21.71K step_loss 0.003408 ppl 1.00 bleu 0.00
+  global step 190000 lr 0.00107628 step-time 0.03s wps 21.65K step_loss 0.003368 ppl 1.00 bleu 0.00
+# Save eval, global step 190000
+  loaded eval model parameters from /app/user/qichao/ali/seq_model/seq2seq/nmt-1.2/models/20180305/1/translate.ckpt-180000, time 0.95s
+eval_step 180000 compute_perplexity
+test  eval loss: 0.003458, time 2669s, Wed Mar  7 13:41:51 2018.
+  global step 191000 lr 0.00105476 step-time 0.03s wps 21.72K step_loss 0.003122 ppl 1.00 bleu 0.00
+  global step 192000 lr 0.00103366 step-time 0.03s wps 21.66K step_loss 0.002949 ppl 1.00 bleu 0.00
+  global step 193000 lr 0.00101299 step-time 0.03s wps 21.68K step_loss 0.003384 ppl 1.00 bleu 0.00
+  global step 194000 lr 0.000992728 step-time 0.03s wps 21.50K step_loss 0.003715 ppl 1.00 bleu 0.00
+  global step 195000 lr 0.000972874 step-time 0.03s wps 21.51K step_loss 0.002958 ppl 1.00 bleu 0.00
+  global step 196000 lr 0.000953416 step-time 0.03s wps 21.45K step_loss 0.003386 ppl 1.00 bleu 0.00
+  global step 197000 lr 0.000934348 step-time 0.03s wps 21.61K step_loss 0.003864 ppl 1.00 bleu 0.00
+  global step 198000 lr 0.000915661 step-time 0.03s wps 21.60K step_loss 0.005169 ppl 1.00 bleu 0.00
+  global step 199000 lr 0.000897348 step-time 0.03s wps 21.68K step_loss 0.003595 ppl 1.00 bleu 0.00
+  global step 200000 lr 0.000879401 step-time 0.03s wps 21.58K step_loss 0.003820 ppl 1.00 bleu 0.00
+# Save eval, global step 200000
+  loaded eval model parameters from /app/user/qichao/ali/seq_model/seq2seq/nmt-1.2/models/20180305/1/translate.ckpt-190000, time 0.94s
+eval_step 190000 compute_perplexity
+test  eval loss: 0.003455, time 2670s, Wed Mar  7 14:31:48 2018.
+  global step 201000 lr 0.000861813 step-time 0.03s wps 21.63K step_loss 0.003923 ppl 1.00 bleu 0.00
+  global step 202000 lr 0.000844577 step-time 0.03s wps 21.63K step_loss 0.003383 ppl 1.00 bleu 0.00
+  global step 203000 lr 0.000827685 step-time 0.03s wps 21.68K step_loss 0.003277 ppl 1.00 bleu 0.00
+  global step 204000 lr 0.000811131 step-time 0.03s wps 21.62K step_loss 0.003635 ppl 1.00 bleu 0.00
+  global step 205000 lr 0.000794909 step-time 0.03s wps 21.60K step_loss 0.003378 ppl 1.00 bleu 0.00
+  global step 206000 lr 0.000779011 step-time 0.03s wps 21.48K step_loss 0.003644 ppl 1.00 bleu 0.00
+  global step 207000 lr 0.00076343 step-time 0.03s wps 21.47K step_loss 0.003498 ppl 1.00 bleu 0.00
+  global step 208000 lr 0.000748162 step-time 0.03s wps 21.48K step_loss 0.002684 ppl 1.00 bleu 0.00
+  global step 209000 lr 0.000733199 step-time 0.03s wps 21.58K step_loss 0.003684 ppl 1.00 bleu 0.00
+  global step 210000 lr 0.000718535 step-time 0.03s wps 21.44K step_loss 0.004483 ppl 1.00 bleu 0.00
+# Save eval, global step 210000
+  loaded eval model parameters from /app/user/qichao/ali/seq_model/seq2seq/nmt-1.2/models/20180305/1/translate.ckpt-200000, time 0.92s
+eval_step 200000 compute_perplexity
